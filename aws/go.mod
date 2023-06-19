@@ -7,6 +7,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.18.27
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.10.28
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.4.55
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.26.2
+	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.21.2
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.19.10
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.27.3
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.35.2
@@ -16,6 +18,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.36.6
 	github.com/aws/aws-sdk-go-v2/service/xray v1.16.13
 	github.com/aws/smithy-go v1.13.5
+	github.com/oslokommune/common-lib-go/lambdaruntime v0.1.0
 	github.com/rs/zerolog v1.29.1
 )
 
