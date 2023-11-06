@@ -3,6 +3,7 @@ package configurationreader
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -20,6 +21,8 @@ var expectedConfig = Config{
 }
 
 type ParameterStoreClientMock struct{}
+
+type ParameterStoreUnauthorizedClientMock struct{}
 
 func (ParameterStoreClientMock) GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error) {
 	value, _ := json.Marshal(&expectedConfig)
@@ -39,6 +42,10 @@ func (ParameterStoreClientMock) GetParameter(ctx context.Context, params *ssm.Ge
 		},
 		ResultMetadata: middleware.Metadata{},
 	}, nil
+}
+
+func (ParameterStoreUnauthorizedClientMock) GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error) {
+	return nil, errors.New("operation error SSM: GetParameter, failed to sign request: failed to retrieve credentials")
 }
 
 type Config struct {
@@ -78,4 +85,38 @@ func TestReadConfigurationWithOverride(t *testing.T) {
 	}
 
 	assert.EqualValues(t, expectedOverrideConfig, *config)
+}
+
+func TestReadConfigurationUsesOverrideIfUnauthorized(t *testing.T) {
+	ctx := context.Background()
+	mock := ParameterStoreUnauthorizedClientMock{}
+
+	expectedConfig := Config{
+		Host: "http://google.no",
+		Port: 8080,
+		Flag: false,
+	}
+
+	_ = os.Setenv("host", "http://google.no")
+	_ = os.Setenv("times", "8080")
+	_ = os.Setenv("flag", "false")
+
+	config, err := ReadConfiguration[Config](ctx, mock, "config")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.EqualValues(t, expectedConfig, *config)
+}
+
+func TestPanicIfConfigFieldMissing(t *testing.T) {
+	ctx := context.Background()
+	mock := ParameterStoreUnauthorizedClientMock{}
+
+	_ = os.Setenv("host", "http://google.no")
+	_ = os.Setenv("times", "8080")
+	_ = os.Unsetenv("flag")
+
+	assert.Panics(t, func() { ReadConfiguration[Config](ctx, mock, "config") })
+
 }
