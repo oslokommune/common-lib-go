@@ -12,6 +12,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig"
 )
 
 func init() {
@@ -44,7 +46,7 @@ func init() {
 	}
 
 	// Add default fields to std logger
-	log.Logger = log.With().Str("app_label", os.Getenv("APP_LABEL")).Str("namespace", os.Getenv("NAMESPACE")).Str("pod_name", os.Getenv("POD_NAME")).Caller().Logger()
+	log.Logger = log.With().Str("app_label", os.Getenv("APP_LABEL")).Caller().Logger()
 }
 
 func errorResponse(w http.ResponseWriter, message string, httpStatusCode int) {
@@ -73,14 +75,22 @@ func localProxy[T any, R any](handler func(ctx context.Context, payload T) (R, e
 	}
 }
 
-func Start[T any, R any](handler func(ctx context.Context, payload T) (R, error)) {
+func Start[T any, R any](handler func(ctx context.Context, payload T) (R, error), tracing bool) {
 	if !IsRunningAsLambda() {
 		log.Info().Msg("starting web proxy for local execution")
 		proxyHandler := http.HandlerFunc(localProxy[T, R](handler))
 		http.Handle("/", proxyHandler)
 		log.Fatal().Err(http.ListenAndServe(":8080", nil))
 	} else {
-		lambda.Start(handler)
+		if tracing {
+			ctx := context.Background()
+			tp := InitializeTracing(ctx)
+			defer ShutdownTracing(ctx, tp)
+
+			otellambda.InstrumentHandler(handler, xrayconfig.WithRecommendedOptions(tp)...)
+		} else {
+			lambda.Start(handler)
+		}
 	}
 }
 

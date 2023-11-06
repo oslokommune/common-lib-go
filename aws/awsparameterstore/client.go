@@ -2,6 +2,7 @@ package awsssm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,11 +11,11 @@ import (
 	"github.com/oslokommune/common-lib-go/lambdaruntime"
 )
 
-func NewSSMClient() *ssm.Client {
+func NewSSMClient(ctx context.Context) *ssm.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {
-		cfg, _ = config.LoadDefaultConfig(context.TODO())
+		cfg, _ = config.LoadDefaultConfig(ctx)
 	} else {
 		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
 			if service == ssm.ServiceID && region == "eu-north-1" {
@@ -45,7 +46,7 @@ func getParameter(ctx context.Context, api GetParameterAPI, input *ssm.GetParame
 	return api.GetParameter(ctx, input)
 }
 
-func GetParameterStoreParameter(ctx context.Context, client GetParameterAPI, name string) (*string, error) {
+func GetParameterStoreParameter(ctx context.Context, client GetParameterAPI, name string, container any) error {
 	bool := aws.Bool(true)
 	input := ssm.GetParameterInput{
 		Name:           aws.String(name),
@@ -54,8 +55,12 @@ func GetParameterStoreParameter(ctx context.Context, client GetParameterAPI, nam
 
 	output, err := getParameter(ctx, client, &input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return output.Parameter.Value, nil
+	if err := json.Unmarshal([]byte(*output.Parameter.Value), container); err != nil {
+		return err
+	}
+
+	return nil
 }
