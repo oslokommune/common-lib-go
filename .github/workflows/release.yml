@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        required: true
+        type: choice
+        options:
+          - aws
+          - db
+          - queue
+      bump:
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  build-and-test:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache semver-tool
+        id: cache-semver-tool
+        uses: actions/cache@v3
+        with:
+          path: ~/semver
+          key: semver
+
+      - name: Last ned semver-tool
+        if: steps.cache-semver-tool.outputs.cache-hit != 'true'
+        run: |
+          wget -O ~/semver https://github.com/fsaintjacques/semver-tool/blob/3.4.0/src/semver
+          chmod +x ~/semver
+
+      - name: "Bygg og test"
+        run: |
+          module=${{ inputs.module }}
+          bump=${{ inputs.bump }}
+          # fetch e.g. module/v1.2.3
+          previous_tag=$(git tag --list --sort=-creatordate "$module*" | head -n1)
+          # trim module/v prefix
+          previous_version=$(echo $previous_tag | sed -e "s/$module\/v//")
+          if [ -z "$previous_version" ]; then
+              previous_version="0.0.0"
+          fi
+          new_version=$(~/semver bump $bump $previous_version)
+          git tag "$module/v$new_version"
+          git push --tags
