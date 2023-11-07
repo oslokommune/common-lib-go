@@ -49,7 +49,7 @@ func (ParameterStoreUnauthorizedClientMock) GetParameter(ctx context.Context, pa
 }
 
 type Config struct {
-	Host string `json:"host"`
+	Host string `json:"host" env:"HOST"`
 	Port int    `json:"times"`
 	Flag bool   `json:"flag"`
 }
@@ -76,7 +76,7 @@ func TestReadConfigurationWithOverride(t *testing.T) {
 		Flag: false,
 	}
 
-	os.Setenv("host", "http://google.no")
+	os.Setenv("HOST", "http://google.no")
 	os.Setenv("flag", "false")
 
 	config, err := ReadConfiguration[Config](ctx, mock, "config")
@@ -97,7 +97,7 @@ func TestReadConfigurationUsesOverrideIfUnauthorized(t *testing.T) {
 		Flag: false,
 	}
 
-	os.Setenv("host", "http://google.no")
+	os.Setenv("HOST", "http://google.no")
 	os.Setenv("times", "8080")
 	os.Setenv("flag", "false")
 

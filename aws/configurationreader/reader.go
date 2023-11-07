@@ -10,6 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Read a ParameterStore variable and/or environment variables into a config struct.
+//
+// The struct should be annotated with a `json` tags and optionally `env` tags.
+// to indicate which JSON properties and environment variable to read from.
+// Struct fields should be of type string, bool or int.
+//
+// If the environment variable is set, it overrides the value from ParameterStore.
 func ReadConfiguration[T any](ctx context.Context, client awsssm.GetParameterAPI, name string) (*T, error) {
 	var cfg T
 
@@ -28,8 +35,11 @@ func ReadConfiguration[T any](ctx context.Context, client awsssm.GetParameterAPI
 		fieldType := cfgType.Field(i)
 		fieldValue := cfgValue.Field(i)
 
-		// Get the JSON tag value of the field
-		tag := fieldType.Tag.Get("json")
+		// Determine what env var to read from
+		tag := fieldType.Tag.Get("env")
+		if tag == "" {
+			tag = fieldType.Tag.Get("json")
+		}
 
 		envValue, found := os.LookupEnv(tag)
 		if !found && fieldValue.IsZero() {
