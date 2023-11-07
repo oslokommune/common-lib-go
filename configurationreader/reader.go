@@ -15,7 +15,7 @@ func ReadConfiguration[T any](ctx context.Context, client awsssm.GetParameterAPI
 
 	// Read and fill with parameterstore values
 	if err := awsssm.GetParameterStoreParameter(ctx, client, name, &cfg); err != nil {
-		return nil, err
+		log.Info().Msgf("Failed to read parameterstore configuration for parameter %s", name)
 	}
 
 	// Override with env variabler and panic if no value is set in either way
