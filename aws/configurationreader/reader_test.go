@@ -76,8 +76,8 @@ func TestReadConfigurationWithOverride(t *testing.T) {
 		Flag: false,
 	}
 
-	_ = os.Setenv("host", "http://google.no")
-	_ = os.Setenv("flag", "false")
+	os.Setenv("host", "http://google.no")
+	os.Setenv("flag", "false")
 
 	config, err := ReadConfiguration[Config](ctx, mock, "config")
 	if err != nil {
@@ -97,9 +97,9 @@ func TestReadConfigurationUsesOverrideIfUnauthorized(t *testing.T) {
 		Flag: false,
 	}
 
-	_ = os.Setenv("host", "http://google.no")
-	_ = os.Setenv("times", "8080")
-	_ = os.Setenv("flag", "false")
+	os.Setenv("host", "http://google.no")
+	os.Setenv("times", "8080")
+	os.Setenv("flag", "false")
 
 	config, err := ReadConfiguration[Config](ctx, mock, "config")
 	if err != nil {
@@ -113,10 +113,9 @@ func TestPanicIfConfigFieldMissing(t *testing.T) {
 	ctx := context.Background()
 	mock := ParameterStoreUnauthorizedClientMock{}
 
-	_ = os.Setenv("host", "http://google.no")
-	_ = os.Setenv("times", "8080")
-	_ = os.Unsetenv("flag")
+	os.Setenv("host", "http://google.no")
+	os.Setenv("times", "8080")
+	os.Unsetenv("flag")
 
 	assert.Panics(t, func() { ReadConfiguration[Config](ctx, mock, "config") })
-
 }

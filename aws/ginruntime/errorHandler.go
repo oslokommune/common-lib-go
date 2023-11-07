@@ -29,12 +29,12 @@ func jsonErrorReporter(errType gin.ErrorType) gin.HandlerFunc {
 
 		err := errorList[0].Err
 		var parsedError *ApiError
-		switch err.(type) {
+		switch err := err.(type) {
 		case ApiError:
-			a := err.(ApiError)
+			a := err
 			parsedError = &a
 		case DbError:
-			dbError := err.(DbError)
+			dbError := err
 			parsedError = &ApiError{
 				Code:    http.StatusInternalServerError,
 				Message: dbError.Error(),
@@ -51,8 +51,6 @@ func jsonErrorReporter(errType gin.ErrorType) gin.HandlerFunc {
 		// Put the error into response
 		c.IndentedJSON(parsedError.Code, parsedError)
 		c.Abort()
-
-		return
 	}
 }
 

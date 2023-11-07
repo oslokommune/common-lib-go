@@ -1,16 +1,15 @@
 package ginruntime
 
-type UnauthorizedError struct {
-}
+type UnauthorizedError struct{}
 
 func (unauthorized UnauthorizedError) Error() string {
 	return "Unauthorized"
 }
 
 type ApiError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
 	Details error  `json:"-"`
+	Message string `json:"message"`
+	Code    int    `json:"code"`
 }
 
 func (appError ApiError) Error() string {
@@ -18,8 +17,8 @@ func (appError ApiError) Error() string {
 }
 
 type DbError struct {
-	Code int   `json:"code"`
 	Err  error `json:"message"`
+	Code int   `json:"code"`
 }
 
 func (dbError DbError) Error() string {
