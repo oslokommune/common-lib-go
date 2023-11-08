@@ -1,0 +1,27 @@
+name: Bygg PR og kjør tester
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "**.MD"
+      - ".gitignore"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [aws, db, queue]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+      - name: "Installere testverktøy"
+        run: go install gotest.tools/gotestsum@v1.11.0
+      - name: "Bygg og test"
+        run: |
+          cd "${{ matrix.module }}"
+          go build -v ./...
+          gotestsum
