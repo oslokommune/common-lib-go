@@ -167,13 +167,17 @@ func (c *Client) callEndpoint(req *http.Request, span trace.Span) ([]byte, error
 		span.SetAttributes(attribute.String("http.url", req.URL.String()))
 	}
 
-	if statusCode != http.StatusOK {
-		return nil, fmt.Errorf("status code=%d, URL=%s", statusCode, req.URL.String())
-	}
-
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if statusCode != http.StatusOK {
+		httpError := HTTPError{
+			StatusCode: statusCode,
+			Message:    string(body),
+		}
+		return nil, &httpError
 	}
 
 	return body, nil
