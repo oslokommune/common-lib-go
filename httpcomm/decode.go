@@ -1,4 +1,4 @@
-package httpComm
+package httpcomm
 
 import (
 	"context"
