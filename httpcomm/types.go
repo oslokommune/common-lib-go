@@ -1,12 +1,19 @@
 package httpComm
 
-import "fmt"
+import (
+	"io"
+)
 
-type HTTPError struct {
-	Message    string
-	StatusCode int
+type HTTPRequest struct {
+	Body    io.Reader
+	Token   *string
+	Headers map[string]string
+	Url     string
+	Method  string
+	Tracing bool
 }
 
-func (e *HTTPError) Error() string {
-	return fmt.Sprintf("status code: %d, message: %s", e.StatusCode, e.Message)
+type HTTPResponse struct {
+	Message    string
+	StatusCode int
 }
