@@ -45,6 +45,7 @@ jobs:
         run: |
           module="${{ inputs.module }}"
           bump="${{ inputs.bump }}"
+          git fetch --prune --unshallow --tags
           # fetch e.g. module/v1.2.3
           previous_tag=$(git tag --list --sort=-creatordate "$module*" | head -n1)
           # trim module/v prefix
