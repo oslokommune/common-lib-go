@@ -10,6 +10,7 @@ on:
           - aws
           - db
           - queue
+          - httpcomm
       bump:
         required: true
         type: choice
