@@ -20,7 +20,7 @@ on:
           - patch
 
 jobs:
-  build-and-test:
+  release-new-version:
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
           wget -O ~/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/3.4.0/src/semver
           chmod +x ~/semver
 
-      - name: "Bygg og test"
+      - name: "Release ny ${{ inputs.bump }} version av ${{ inputs.module }}"
         run: |
           module="${{ inputs.module }}"
           bump="${{ inputs.bump }}"
@@ -56,3 +56,4 @@ jobs:
           new_version=$(~/semver bump $bump $previous_version)
           git tag "$module/v$new_version"
           git push --tags
+          echo "$module: $previous_version → $new_version"
