@@ -27,6 +27,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
+        with:
+          go-version: "stable"
       - name: "Installere testverktøy"
         run: go install gotest.tools/gotestsum@v1.11.0
       - name: "Bygg og test"
