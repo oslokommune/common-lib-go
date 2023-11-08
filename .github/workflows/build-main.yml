@@ -1,4 +1,4 @@
-name: Bygg PR og kjør tester
+name: Bygg og kjør tester
 
 on:
   push:
