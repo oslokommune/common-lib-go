@@ -4,13 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       module:
-        required: true
-        type: choice
-        options:
-          - aws
-          - db
-          - queue
-          - httpcomm
+        required: false
+        default: "*"
+        description: "Mappenavn til modul som skal oppdateres. Støtter globbing. La den være * for å oppdatere alle moduler."
       bump:
         required: true
         type: choice
@@ -21,11 +17,23 @@ on:
           - patch
 
 jobs:
-  build-and-test:
+  list-go-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.list-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list-modules
+        run: echo modules=$(echo "$(dirname $(find ${{ inputs.module }} -name 'go.mod'))" | jq -cnR '[inputs | select(length>0)]') >> $GITHUB_OUTPUT
+
+  release-new-version:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-
+    needs: list-go-modules
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.list-go-modules.outputs.modules) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,9 +50,9 @@ jobs:
           wget -O ~/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/3.4.0/src/semver
           chmod +x ~/semver
 
-      - name: "Bygg og test"
+      - name: "Release ny ${{ inputs.bump }} version av ${{ matrix.module }}"
         run: |
-          module="${{ inputs.module }}"
+          module="${{ matrix.module }}"
           bump="${{ inputs.bump }}"
           git fetch --prune --unshallow --tags
           # fetch e.g. module/v1.2.3
@@ -57,3 +65,4 @@ jobs:
           new_version=$(~/semver bump $bump $previous_version)
           git tag "$module/v$new_version"
           git push --tags
+          echo "$module: $previous_version → $new_version"
