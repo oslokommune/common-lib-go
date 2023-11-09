@@ -71,17 +71,15 @@ func Call(ctx context.Context, httpClient HttpDoer, httpRequest HTTPRequest) (*H
 		return nil, err
 	}
 
-	httpError := new(HTTPError)
 	if statusCode < 200 || statusCode > 299 {
-		httpError.Body = string(body)
-		httpError.StatusCode = statusCode
+		return nil, &HTTPError{
+			Body:       string(body),
+			StatusCode: statusCode,
+		}
 	}
 
-	httpResponse := HTTPResponse{
+	return &HTTPResponse{
 		StatusCode: statusCode,
 		Body:       string(body),
-		Error:      httpError,
-	}
-
-	return &httpResponse, nil
+	}, nil
 }
