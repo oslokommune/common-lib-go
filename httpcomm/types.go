@@ -15,7 +15,6 @@ type HTTPRequest struct {
 }
 
 type HTTPResponse struct {
-	Error      *HTTPError
 	Body       string
 	StatusCode int
 }
