@@ -18,6 +18,11 @@ var (
 	}
 )
 
+// Interface for performing HTTP calls, e.g. a `http.Client`
+type HttpDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 func createRequest(ctx context.Context, httpRequest HTTPRequest) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, httpRequest.Method, httpRequest.Url, httpRequest.Body)
 	if err != nil {
@@ -35,7 +40,7 @@ func createRequest(ctx context.Context, httpRequest HTTPRequest) (*http.Request,
 	return req, nil
 }
 
-func Call(ctx context.Context, httpClient *http.Client, httpRequest HTTPRequest) (*HTTPResponse, error) {
+func Call(ctx context.Context, httpClient HttpDoer, httpRequest HTTPRequest) (*HTTPResponse, error) {
 	var span trace.Span
 	if httpRequest.Tracing {
 		_, span = tracer.Start(ctx, httpRequest.Method, trace.WithSpanKind(trace.SpanKindInternal), trace.WithAttributes(traceCommonLabels...))
