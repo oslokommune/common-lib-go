@@ -66,9 +66,12 @@ func Call(ctx context.Context, httpClient *http.Client, httpRequest HTTPRequest)
 		return nil, err
 	}
 
+	error := statusCode < 200 || statusCode > 299
+
 	httpResponse := HTTPResponse{
 		StatusCode: statusCode,
-		Message:    string(body),
+		Body:       string(body),
+		Error:      error,
 	}
 
 	return &httpResponse, nil

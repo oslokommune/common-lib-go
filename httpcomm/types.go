@@ -14,6 +14,12 @@ type HTTPRequest struct {
 }
 
 type HTTPResponse struct {
+	Body       string
+	StatusCode int
+	Error      bool
+}
+
+type HttpError struct {
 	Message    string
 	StatusCode int
 }
