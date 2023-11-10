@@ -56,7 +56,7 @@ jobs:
           bump="${{ inputs.bump }}"
           git fetch --prune --unshallow --tags
           # fetch e.g. module/v1.2.3
-          previous_tag=$(git tag --list --sort=-creatordate "$module*" | head -n1)
+          previous_tag=$(git tag --list --sort=-version:refname "$module*" | head -n1)
           # trim module/v prefix
           previous_version=$(echo $previous_tag | sed -e "s/$module\/v//")
           if [ -z "$previous_version" ]; then
