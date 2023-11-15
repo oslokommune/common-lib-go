@@ -75,3 +75,8 @@ func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, ha
 	}
 	setMethodHandler(method, path, group, handlers...)
 }
+
+// Adds middleware
+func (e *GinEngine) Use(middleware ...gin.HandlerFunc) {
+	e.engine.Use(middleware...)
+}
