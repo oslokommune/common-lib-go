@@ -23,7 +23,7 @@ type HttpDoer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-func createRequest(ctx context.Context, httpRequest HTTPRequest) (*http.Request, error) {
+func CreateRequest(ctx context.Context, httpRequest HTTPRequest) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, httpRequest.Method, httpRequest.Url, httpRequest.Body)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func Call(ctx context.Context, httpClient HttpDoer, httpRequest HTTPRequest) (*H
 		defer span.End()
 	}
 
-	req, err := createRequest(ctx, httpRequest)
+	req, err := CreateRequest(ctx, httpRequest)
 	if err != nil {
 		return nil, err
 	}
