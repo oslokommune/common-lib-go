@@ -22,6 +22,7 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/logger v0.2.6
 	github.com/gin-gonic/gin v1.9.1
+	github.com/oslokommune/common-lib-go/httpcomm v0.1.10
 	github.com/oslokommune/common-lib-go/lambdaruntime v0.1.0
 	github.com/rs/zerolog v1.29.1
 	github.com/stretchr/testify v1.8.4

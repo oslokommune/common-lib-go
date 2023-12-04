@@ -28,38 +28,18 @@ func jsonErrorReporter(errType gin.ErrorType) gin.HandlerFunc {
 		}
 
 		err := errorList[0].Err
-		var parsedError *ApiError
-		switch err := err.(type) {
-		case ApiError:
-			a := err
-			parsedError = &a
-		case DbError:
-			dbError := err
-			parsedError = &ApiError{
-				Code:    http.StatusInternalServerError,
-				Message: dbError.Error(),
-			}
-		default:
-			parsedError = &ApiError{
-				Code:    http.StatusInternalServerError,
-				Message: "Internal Server Error",
-			}
-		}
+		apierr := Normalize(err)
 
-		logError(parsedError)
-
-		// Put the error into response
-		c.IndentedJSON(parsedError.Code, parsedError)
+		logError(apierr)
+		c.IndentedJSON(apierr.Status, gin.H{"error": apierr.Error()})
 		c.Abort()
 	}
 }
 
-func logError(parsedError *ApiError) {
-	if parsedError.Code > 499 && parsedError.Code < 600 {
-		log.Error().Err(parsedError).Msgf("An error occured, which will cause a %d response", parsedError.Code)
-	} else if parsedError.Code > 399 && parsedError.Code < 500 {
-		log.Warn().Err(parsedError).Msgf("An error occured, which will cause a %d response", parsedError.Code)
-	} else {
-		log.Warn().Err(parsedError).Msgf("An error occured, which will cause a %d response", parsedError.Code)
+func logError(err *ApiError) {
+	if err.Status >= http.StatusInternalServerError {
+		log.Error().Err(err).Msgf("An error occured, which will cause a %d response", err.Status)
+	} else if err.Status == http.StatusFailedDependency {
+		log.Warn().Err(err).Msgf("An error occured, which will cause a %d response", err.Status)
 	}
 }
