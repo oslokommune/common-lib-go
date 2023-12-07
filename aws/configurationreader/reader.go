@@ -22,7 +22,7 @@ func ReadConfiguration[T any](ctx context.Context, client awsssm.GetParameterAPI
 
 	// Read and fill with parameterstore values
 	if err := awsssm.GetParameterStoreParameter(ctx, client, name, &cfg); err != nil {
-		log.Info().Msgf("Failed to read parameterstore configuration for parameter %s", name)
+		log.Info().Err(err).Msgf("Failed to read parameterstore configuration for parameter %s", name)
 	}
 
 	// Override with env variabler and panic if no value is set in either way
@@ -42,7 +42,7 @@ func ReadConfiguration[T any](ctx context.Context, client awsssm.GetParameterAPI
 		}
 
 		envValue, found := os.LookupEnv(tag)
-		if !found && fieldValue.IsZero() {
+		if !found && (fieldValue.IsZero() && fieldValue.Kind() != reflect.Bool) {
 			log.Panic().Msgf("Either parameterstore value for parameter %s or environment variable is not set.", tag)
 		}
 
