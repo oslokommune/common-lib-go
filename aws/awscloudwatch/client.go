@@ -12,7 +12,7 @@ import (
 	metrictypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs/types"
-	"github.com/oslokommune/common-lib-go/lambdaruntime"
+	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 )
 
 func NewCloudwatchLogsClient() *cloudwatchlogs.Client {

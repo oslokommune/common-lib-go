@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/oslokommune/common-lib-go/lambdaruntime"
+	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 	"github.com/rs/zerolog/log"
 )
 
@@ -88,7 +88,7 @@ func ListBucketObjects(ctx context.Context, client ListObjectsV2API, bucketName 
 		return nil, err
 	}
 
-	list := make([]S3File, 0, output.KeyCount)
+	list := make([]S3File, 0, *output.KeyCount)
 	for _, v := range output.Contents {
 		list = append(list, S3File{
 			Name:      *v.Key,
@@ -109,7 +109,6 @@ func DownloadFile(ctx context.Context, api GetObjectAPI, bucketName string, obje
 	if err != nil {
 		return nil, err
 	}
-
 	defer output.Body.Close()
 
 	bytes, err := io.ReadAll(output.Body)

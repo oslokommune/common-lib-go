@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2/types"
-	"github.com/oslokommune/common-lib-go/lambdaruntime"
+	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 )
 
 func NewApiGatewayv2Client() *apigatewayv2.Client {

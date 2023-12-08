@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 
+	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -50,6 +52,14 @@ func Call(ctx context.Context, httpClient HttpDoer, httpRequest HTTPRequest) (*H
 	req, err := CreateRequest(ctx, httpRequest)
 	if err != nil {
 		return nil, err
+	}
+
+	// Logs request if debug level is enabled
+	if log.Debug().Enabled() {
+		reqDump, err := httputil.DumpRequestOut(req, true)
+		if err == nil {
+			log.Debug().Msg(string(reqDump))
+		}
 	}
 
 	resp, err := httpClient.Do(req)

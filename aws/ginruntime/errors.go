@@ -31,6 +31,7 @@ func Normalize(err error) *ApiError {
 	switch err := err.(type) {
 	case *ApiError:
 		return err
+	// TODO: See if we can avoid having a depencency towards httpcomm in the future
 	case *httpcomm.HTTPError:
 		if err.StatusCode == http.StatusNotFound {
 			return NotFound(err.Error())

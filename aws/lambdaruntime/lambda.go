@@ -17,7 +17,7 @@ import (
 )
 
 func init() {
-	// Loglevel defaults to debug, can be overriden
+	// Loglevel defaults to info, can be overriden
 	logLevel := zerolog.InfoLevel
 	if l := os.Getenv("LOG_LEVEL"); l != "" {
 		switch l {
