@@ -11,9 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
-func NewECSClient() *ecs.Client {
+func NewECSClient(useTracing bool) *ecs.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {
@@ -33,6 +34,11 @@ func NewECSClient() *ecs.Client {
 		// Use the SDK's default configuration with region and custome endpoint resolver
 		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1"), config.WithEndpointResolverWithOptions(customResolver))
 	}
+
+	if useTracing {
+		otelaws.AppendMiddlewares(&cfg.APIOptions)
+	}
+
 	// Create an AWS ECS client.
 	ecsClient := ecs.NewFromConfig(cfg)
 	return ecsClient

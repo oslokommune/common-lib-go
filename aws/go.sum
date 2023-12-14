@@ -56,6 +56,8 @@ github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.25.4 h1:gsiwBC1ca43hCwyYi
 github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.25.4/go.mod h1:4Ae1NCLK6ghmjzd45Tc33GgCKhUWD2ORAlULtMO1Cbs=
 github.com/aws/aws-sdk-go-v2/service/sns v1.26.4 h1:OFwVn7AjJ6a6l5OGVbn/yv93fm6kwkNx9yeUWZhRJr4=
 github.com/aws/aws-sdk-go-v2/service/sns v1.26.4/go.mod h1:IrcbquqMupzndZ20BXxDxjM7XenTRhbwBOetk4+Z5oc=
+github.com/aws/aws-sdk-go-v2/service/sqs v1.29.5 h1:cJb4I498c1mrOVrRqYTcnLD65AFqUuseHfzHdNZHL9U=
+github.com/aws/aws-sdk-go-v2/service/sqs v1.29.5/go.mod h1:mCUv04gd/7g+/HNzDB4X6dzJuygji0ckvB3Lg/TdG5Y=
 github.com/aws/aws-sdk-go-v2/service/ssm v1.44.4 h1:jnqy2jeSGUr/hqv8d2H2rjVt2QYsvy7/AmjRh/pIvEA=
 github.com/aws/aws-sdk-go-v2/service/ssm v1.44.4/go.mod h1:uXndCJoDO9gpuK24rNWVCnrGNUydKFEAYAZ7UU9S0rQ=
 github.com/aws/aws-sdk-go-v2/service/sso v1.18.4 h1:2UVO4N/polvKeP+yCA8TLEmidEKxmNTeVpsZnj/bbgA=
@@ -192,6 +194,8 @@ go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellam
 go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda v0.46.1/go.mod h1:7IlGZhDQiqQCUcas3gaVNsJxuLCYFwaNGnNZiSDBRoA=
 go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig v0.46.1 h1:BpHEPV9tTlXYWRp1z+brzQNzMOufzirv+UDsfVV6mDc=
 go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig v0.46.1/go.mod h1:FF3PkU2W/rziJ0Gyw+pZPuve9d5INeRiirCRWfd9Z4U=
+go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.46.1 h1:PGmSzEMllKQwBQHe9SERAsCytvgLhsb8OrRLeW+40xw=
+go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.46.1/go.mod h1:h0dNRrQsnnlMonPE/+FXrXtDYZEyZSTaIOfs+n8P/RQ=
 go.opentelemetry.io/contrib/propagators/aws v1.21.1 h1:uQIQIDWb0gzyvon2ICnghpLAf9w7ADOCUiIiwCQgR2o=
 go.opentelemetry.io/contrib/propagators/aws v1.21.1/go.mod h1:kCcto3ACQxm+VrkQX/NK/TkDmAd99MQhvffzyTKhzL4=
 go.opentelemetry.io/otel v1.21.0 h1:hzLeKBZEL7Okw2mGzZ0cc4k/A7Fta0uoPgaJCr8fsFc=

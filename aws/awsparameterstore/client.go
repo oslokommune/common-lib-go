@@ -9,13 +9,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
-func NewSSMClient(ctx context.Context) *ssm.Client {
+func NewSSMClient(useTracing bool) *ssm.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {
-		cfg, _ = config.LoadDefaultConfig(ctx)
+		cfg, _ = config.LoadDefaultConfig(context.TODO())
 	} else {
 		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
 			if service == ssm.ServiceID && region == "eu-north-1" {
@@ -31,7 +32,11 @@ func NewSSMClient(ctx context.Context) *ssm.Client {
 		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1"), config.WithEndpointResolverWithOptions(customResolver))
 	}
 
-	// Create an Amazon SecretsMananger client.
+	if useTracing {
+		otelaws.AppendMiddlewares(&cfg.APIOptions)
+	}
+
+	// Create an Amazon SystemsManager client.
 	client := ssm.NewFromConfig(cfg)
 	return client
 }
