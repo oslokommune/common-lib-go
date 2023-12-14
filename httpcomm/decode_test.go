@@ -17,7 +17,7 @@ func TestDecodeValidJsonToStringReturnsValue(t *testing.T) {
 	actual := "Hello world"
 	bytes, _ := json.Marshal(actual)
 
-	received, err := Decode[string](context.Background(), bytes, false)
+	received, err := Decode[string](context.Background(), bytes)
 
 	assert.Nil(t, err)
 	assert.Equal(t, actual, *received)
@@ -29,7 +29,7 @@ func TestDecodeInvalidJsonToStringReturnsError(t *testing.T) {
 	invalid := 10
 	bytes, _ := json.Marshal(invalid)
 
-	received, err := Decode[string](ctx, bytes, false)
+	received, err := Decode[string](ctx, bytes)
 
 	assert.Nil(t, received)
 	assert.Error(t, err)
@@ -39,7 +39,7 @@ func TestDecodeValidJsonToStructReturnsValue(t *testing.T) {
 	actual := TestStruct{"Hello world", 10}
 	bytes, _ := json.Marshal(actual)
 
-	received, err := Decode[TestStruct](context.Background(), bytes, false)
+	received, err := Decode[TestStruct](context.Background(), bytes)
 
 	assert.Nil(t, err)
 	assert.Equal(t, actual, *received)
@@ -49,7 +49,7 @@ func TestDecodeInvalidJsonToStructReturnsValue(t *testing.T) {
 	invalid := 10
 	bytes, _ := json.Marshal(invalid)
 
-	received, err := Decode[TestStruct](context.Background(), bytes, false)
+	received, err := Decode[TestStruct](context.Background(), bytes)
 
 	assert.Nil(t, received)
 	assert.Error(t, err)

@@ -14,10 +14,12 @@ import (
 	"github.com/rs/zerolog/pkgerrors"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig"
+	"go.opentelemetry.io/contrib/propagators/aws/xray"
+	"go.opentelemetry.io/otel"
 )
 
 func init() {
-	// Loglevel defaults to debug, can be overriden
+	// Loglevel defaults to info, can be overriden
 	logLevel := zerolog.InfoLevel
 	if l := os.Getenv("LOG_LEVEL"); l != "" {
 		switch l {
@@ -75,7 +77,7 @@ func localProxy[T any, R any](handler func(ctx context.Context, payload T) (R, e
 	}
 }
 
-func Start[T any, R any](handler func(ctx context.Context, payload T) (R, error), tracing bool) {
+func Start[T any, R any](ctx context.Context, handler func(ctx context.Context, payload T) (R, error), tracing bool) {
 	if !IsRunningAsLambda() {
 		log.Info().Msg("starting web proxy for local execution")
 		proxyHandler := http.HandlerFunc(localProxy[T, R](handler))
@@ -83,11 +85,22 @@ func Start[T any, R any](handler func(ctx context.Context, payload T) (R, error)
 		log.Fatal().Err(http.ListenAndServe(":8080", nil))
 	} else {
 		if tracing {
-			ctx := context.Background()
-			tp := InitializeTracing(ctx)
-			defer ShutdownTracing(ctx, tp)
+			tp, err := xrayconfig.NewTracerProvider(ctx)
+			if err != nil {
+				log.Panic().Err(err).Msg("Error creating trace provider")
+			}
 
-			otellambda.InstrumentHandler(handler, xrayconfig.WithRecommendedOptions(tp)...)
+			otel.SetTracerProvider(tp)
+			otel.SetTextMapPropagator(xray.Propagator{})
+
+			defer func(ctx context.Context) {
+				err := tp.Shutdown(ctx)
+				if err != nil {
+					log.Error().Err(err).Msg("Error shutting down tracer provider")
+				}
+			}(ctx)
+
+			lambda.Start(otellambda.InstrumentHandler(handler, xrayconfig.WithRecommendedOptions(tp)...))
 		} else {
 			lambda.Start(handler)
 		}

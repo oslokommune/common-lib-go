@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
-	"github.com/oslokommune/common-lib-go/lambdaruntime"
+	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 	"github.com/rs/zerolog/log"
 )
 

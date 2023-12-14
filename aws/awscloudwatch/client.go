@@ -12,10 +12,11 @@ import (
 	metrictypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs/types"
-	"github.com/oslokommune/common-lib-go/lambdaruntime"
+	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
-func NewCloudwatchLogsClient() *cloudwatchlogs.Client {
+func NewLogsClient(useTracing bool) *cloudwatchlogs.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {
@@ -36,12 +37,16 @@ func NewCloudwatchLogsClient() *cloudwatchlogs.Client {
 		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1"), config.WithEndpointResolverWithOptions(customResolver))
 	}
 
+	if useTracing {
+		otelaws.AppendMiddlewares(&cfg.APIOptions)
+	}
+
 	// Create an Amazon CloudwatchLogs client
 	cloudwatchlogsClient := cloudwatchlogs.NewFromConfig(cfg)
 	return cloudwatchlogsClient
 }
 
-func NewCloudwatchClient() *cloudwatch.Client {
+func NewClient(useTracing bool) *cloudwatch.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {
@@ -60,6 +65,10 @@ func NewCloudwatchClient() *cloudwatch.Client {
 
 		// Use the SDK's default configuration with region and custome endpoint resolver
 		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1"), config.WithEndpointResolverWithOptions(customResolver))
+	}
+
+	if useTracing {
+		otelaws.AppendMiddlewares(&cfg.APIOptions)
 	}
 
 	// Create an Amazon Cloudwatch client.

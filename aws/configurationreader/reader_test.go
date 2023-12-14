@@ -20,12 +20,39 @@ var expectedConfig = Config{
 	Flag: true,
 }
 
+var expectedConfigNoHost = Config{
+	Port: 8080,
+	Flag: true,
+}
+
 type ParameterStoreClientMock struct{}
+
+type ParameterStoreClientNoHostMock struct{}
 
 type ParameterStoreUnauthorizedClientMock struct{}
 
 func (ParameterStoreClientMock) GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error) {
 	value, _ := json.Marshal(&expectedConfig)
+	stringValue := string(value)
+
+	return &ssm.GetParameterOutput{
+		Parameter: &types.Parameter{
+			ARN:              new(string),
+			DataType:         new(string),
+			LastModifiedDate: &time.Time{},
+			Name:             new(string),
+			Selector:         new(string),
+			SourceResult:     new(string),
+			Type:             "",
+			Value:            &stringValue,
+			Version:          0,
+		},
+		ResultMetadata: middleware.Metadata{},
+	}, nil
+}
+
+func (ParameterStoreClientNoHostMock) GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error) {
+	value, _ := json.Marshal(&expectedConfigNoHost)
 	stringValue := string(value)
 
 	return &ssm.GetParameterOutput{
@@ -111,11 +138,11 @@ func TestReadConfigurationUsesOverrideIfUnauthorized(t *testing.T) {
 
 func TestPanicIfConfigFieldMissing(t *testing.T) {
 	ctx := context.Background()
-	mock := ParameterStoreUnauthorizedClientMock{}
+	mock := ParameterStoreClientNoHostMock{}
 
-	os.Setenv("host", "http://google.no")
+	os.Setenv("flag", "true")
 	os.Setenv("times", "8080")
-	os.Unsetenv("flag")
+	os.Unsetenv("HOST")
 
 	assert.Panics(t, func() { ReadConfiguration[Config](ctx, mock, "config") })
 }

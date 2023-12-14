@@ -33,7 +33,7 @@ func NewGinEngine() *GinEngine {
 
 	var rxURL = regexp.MustCompile(`^/*`)
 	// Use zerolog for logging and turn off access logging for all paths
-	engine.Use(logger.SetLogger(logger.WithSkipPathRegexp(rxURL)))
+	engine.Use(logger.SetLogger(logger.WithSkipPathRegexps(rxURL)))
 
 	// CORS config
 	corsConfig := cors.DefaultConfig()

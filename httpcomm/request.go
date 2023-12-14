@@ -5,17 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-)
-
-var (
-	tracer            = otel.Tracer("github.com/oslokommune/httpcomm")
-	traceCommonLabels = []attribute.KeyValue{
-		attribute.String("language", "go"),
-	}
+	"github.com/rs/zerolog/log"
 )
 
 // Interface for performing HTTP calls, e.g. a `http.Client`
@@ -41,15 +33,17 @@ func CreateRequest(ctx context.Context, httpRequest HTTPRequest) (*http.Request,
 }
 
 func Call(ctx context.Context, httpClient HttpDoer, httpRequest HTTPRequest) (*HTTPResponse, error) {
-	var span trace.Span
-	if httpRequest.Tracing {
-		_, span = tracer.Start(ctx, httpRequest.Method, trace.WithSpanKind(trace.SpanKindInternal), trace.WithAttributes(traceCommonLabels...))
-		defer span.End()
-	}
-
 	req, err := CreateRequest(ctx, httpRequest)
 	if err != nil {
 		return nil, err
+	}
+
+	// Logs request if debug level is enabled
+	if log.Debug().Enabled() {
+		reqDump, err := httputil.DumpRequestOut(req, true)
+		if err == nil {
+			log.Debug().Msg(string(reqDump))
+		}
 	}
 
 	resp, err := httpClient.Do(req)
@@ -60,10 +54,12 @@ func Call(ctx context.Context, httpClient HttpDoer, httpRequest HTTPRequest) (*H
 
 	statusCode := resp.StatusCode
 
-	if httpRequest.Tracing {
-		span.SetAttributes(attribute.Int("http.status", statusCode))
-		span.SetAttributes(attribute.String("http.method", "GET"))
-		span.SetAttributes(attribute.String("http.url", req.URL.String()))
+	// Logs response if trace level is enabled
+	if log.Trace().Enabled() {
+		resDump, err := httputil.DumpResponse(resp, true)
+		if err == nil {
+			log.Trace().Msg(string(resDump))
+		}
 	}
 
 	body, err := io.ReadAll(resp.Body)
