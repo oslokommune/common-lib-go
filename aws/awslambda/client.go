@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
-func NewLambdaClient(useTracing bool) *lambda.Client {
+func NewClient(useTracing bool) *lambda.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {

@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
-func NewDynamodbClient(useTracing bool) *dynamodb.Client {
+func NewClient(useTracing bool) *dynamodb.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {

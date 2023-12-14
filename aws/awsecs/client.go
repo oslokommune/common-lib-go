@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
-func NewECSClient(useTracing bool) *ecs.Client {
+func NewClient(useTracing bool) *ecs.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {

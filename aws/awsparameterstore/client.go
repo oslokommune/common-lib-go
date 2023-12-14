@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
-func NewSSMClient(useTracing bool) *ssm.Client {
+func NewClient(useTracing bool) *ssm.Client {
 	var cfg aws.Config
 
 	if lambdaruntime.IsRunningAsLambda() {
