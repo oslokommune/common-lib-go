@@ -35,12 +35,19 @@ func NewStompClient(broker, username, password string) (*StompClient, error) {
 }
 
 func (s *StompClient) Publish(destination string, msg string) error {
+	contentType := "application/json;charset=utf-8"
+	if len(msg) > 0 && msg[0] == '<' {
+		contentType = "application/xml;charset=utf-8"
+	}
+
 	return s.conn.Send(
-		destination,                     // destination
-		"application/xml;charset=utf-8", // content-type
-		[]byte(msg),                     // body
+		destination, // destination
+		contentType,
+		[]byte(msg), // body
 		func(f *frame.Frame) error {
 			f.Header.Del(frame.ContentLength)
+			f.Header.Add("persistent", "true")
+			f.Header.Add("Destination", destination)
 			return nil
 		})
 }
