@@ -49,6 +49,11 @@ func init() {
 
 	// Add default fields to std logger
 	log.Logger = log.With().Str("app_label", os.Getenv("APP_LABEL")).Caller().Logger()
+
+	// If running locally, do not format as json
+	if !IsRunningAsLambda() {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
 }
 
 func errorResponse(w http.ResponseWriter, message string, httpStatusCode int) {
@@ -62,14 +67,14 @@ func errorResponse(w http.ResponseWriter, message string, httpStatusCode int) {
 	w.Write(jsonResponse)
 }
 
-func localProxy[T any, R any](handler func(ctx context.Context, payload T) (R, error)) func(w http.ResponseWriter, r *http.Request) {
+func localProxy[T any, R any](handler func(payload T) (R, error)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var t T
 		decoder := json.NewDecoder(r.Body)
 		decoder.DisallowUnknownFields()
 		_ = decoder.Decode(&t)
 
-		_, err := handler(context.Background(), t)
+		_, err := handler(t)
 		if err != nil {
 			errorResponse(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -77,10 +82,36 @@ func localProxy[T any, R any](handler func(ctx context.Context, payload T) (R, e
 	}
 }
 
-func Start[T any, R any](ctx context.Context, handler func(ctx context.Context, payload T) (R, error), tracing bool) {
+func localProxyWithContext[T any, R any](ctx context.Context, handler func(ctx context.Context, payload T) (R, error)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var t T
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		_ = decoder.Decode(&t)
+
+		_, err := handler(ctx, t)
+		if err != nil {
+			errorResponse(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func Start[T any, R any](handler func(payload T) (R, error)) {
 	if !IsRunningAsLambda() {
 		log.Info().Msg("starting web proxy for local execution")
 		proxyHandler := http.HandlerFunc(localProxy[T, R](handler))
+		http.Handle("/", proxyHandler)
+		log.Fatal().Err(http.ListenAndServe(":8080", nil))
+	} else {
+		lambda.Start(handler)
+	}
+}
+
+func StartWithContext[T any, R any](ctx context.Context, createHandler func(context.Context) func(context.Context, T) (R, error), tracing bool) {
+	if !IsRunningAsLambda() {
+		log.Info().Msg("starting web proxy for local execution")
+		proxyHandler := http.HandlerFunc(localProxyWithContext[T, R](ctx, createHandler(ctx)))
 		http.Handle("/", proxyHandler)
 		log.Fatal().Err(http.ListenAndServe(":8080", nil))
 	} else {
@@ -100,9 +131,9 @@ func Start[T any, R any](ctx context.Context, handler func(ctx context.Context, 
 				}
 			}(ctx)
 
-			lambda.Start(otellambda.InstrumentHandler(handler, xrayconfig.WithRecommendedOptions(tp)...))
+			lambda.Start(otellambda.InstrumentHandler(createHandler(ctx), xrayconfig.WithRecommendedOptions(tp)...))
 		} else {
-			lambda.Start(handler)
+			lambda.Start(createHandler(ctx))
 		}
 	}
 }
