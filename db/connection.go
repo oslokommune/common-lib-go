@@ -1,49 +1,54 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
-	_ "github.com/jackc/pgx/v4/stdlib"
-	"github.com/jmoiron/sqlx"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/zerolog/log"
-	"os"
+)
+
+const (
+	_defaultMaxPoolSize = 1
 )
 
 type PostgresConnection struct {
-	conf   *DbConf
-	DBPool *sqlx.DB
+	sqlDB *sql.DB
+
+	maxPoolSize int
 }
 
-func NewPostgresConnection(conf *DbConf) *PostgresConnection {
-	return &PostgresConnection{conf: conf}
-}
-
-func (p *PostgresConnection) ConnectToDB() {
-	dbUserName := p.conf.Username
-	dbPassword := p.conf.Password
-	dbHost := p.conf.Host
-	dbName := p.conf.Database
-	dbPort := p.conf.Port
-
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUserName, dbPassword, dbName)
-
-	dbpool, err := sqlx.Connect("pgx", psqlInfo)
-
-	if err != nil {
-		log.Error().Msgf("Unable to connect to database: %v\n", err)
-		os.Exit(1)
+func New(conf DbConf, opts ...Option) *PostgresConnection {
+	p := &PostgresConnection{
+		maxPoolSize: _defaultMaxPoolSize,
 	}
 
-	dbpool.SetMaxOpenConns(10)
-	dbpool.SetMaxIdleConns(10)
+	dbUserName := conf.Username
+	dbPassword := conf.Password
+	dbHost := conf.Host
+	dbName := conf.Database
+	dbPort := conf.Port
 
-	p.DBPool = dbpool
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUserName, dbPassword, dbName)
+	sqlDB, err := sql.Open("pgx", psqlInfo)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to open postgres connection")
+	}
+
+	// Custom options
+	for _, opt := range opts {
+		opt(p)
+	}
+
+	sqlDB.SetMaxOpenConns(p.maxPoolSize)
+
+	p.sqlDB = sqlDB
+	return p
 }
 
 func (p *PostgresConnection) CloseConnection() {
-	err := p.DBPool.Close()
+	err := p.sqlDB.Close()
 	if err != nil {
-		log.Error().Msgf("Failed to close database connection %v", err)
+		log.Error().Err(err).Msg("Failed to close postgres connection")
 	}
 }

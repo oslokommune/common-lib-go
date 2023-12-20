@@ -2,14 +2,16 @@ package db
 
 import (
 	"database/sql"
-	"github.com/rs/zerolog/log"
 	"reflect"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog/log"
 )
 
-func PerformSelect(dbConn *PostgresConnection, result interface{}, query string, params ...interface{}) error {
-	err := dbConn.DBPool.Select(result, query, params...)
+func PerformSelect(dbConn *sqlx.DB, result interface{}, query string, params ...interface{}) error {
+	err := dbConn.Select(result, query, params...)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to execute sql query. ")
+		log.Error().Err(err).Msg("Failed to execute sql query.")
 		return err
 	}
 	num := reflect.ValueOf(result).Elem().Len()
@@ -19,22 +21,22 @@ func PerformSelect(dbConn *PostgresConnection, result interface{}, query string,
 	return nil
 }
 
-func PerformGet(dbConn *PostgresConnection, result interface{}, query string, params ...interface{}) error {
-	err := dbConn.DBPool.Get(result, query, params...)
+func PerformGet(dbConn *sqlx.DB, result interface{}, query string, params ...interface{}) error {
+	err := dbConn.Get(result, query, params...)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			log.Error().Err(err).Msg("Failed to execute sql query. ")
+			log.Error().Err(err).Msg("Failed to execute sql query.")
 		}
 		return err
 	}
 	return nil
 }
 
-func PerformExec(dbConn *PostgresConnection, query string, params ...interface{}) error {
-	_, err := dbConn.DBPool.Exec(query, params...)
+func PerformExec(dbConn *sqlx.DB, query string, params ...interface{}) error {
+	_, err := dbConn.Exec(query, params...)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			log.Error().Err(err).Msg("Failed to execute sql query. ")
+			log.Error().Err(err).Msg("Failed to execute sql query.")
 		}
 		return err
 	}
