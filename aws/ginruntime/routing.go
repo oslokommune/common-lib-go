@@ -76,6 +76,10 @@ func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, ha
 	setMethodHandler(method, path, group, handlers...)
 }
 
+func (e *GinEngine) LoadHTLMGlob(path string) {
+	e.engine.LoadHTMLGlob(path)
+}
+
 // Adds middleware
 func (e *GinEngine) Use(middleware ...gin.HandlerFunc) {
 	e.engine.Use(middleware...)

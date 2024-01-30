@@ -47,7 +47,7 @@ func (e *GinEngine) StartServer(ctx context.Context, tracing bool) {
 		}
 	} else {
 		if err := e.engine.Run(); err != nil {
-			log.Info().Msgf("Error starting gin %v", err)
+			log.Error().Msgf("Error starting gin %v", err)
 		}
 		log.Info().Msg("Application exiting.")
 	}

@@ -46,6 +46,10 @@ func New(conf DbConf, opts ...Option) *PostgresConnection {
 	return p
 }
 
+func (p *PostgresConnection) Connection() *sql.DB {
+	return p.sqlDB
+}
+
 func (p *PostgresConnection) CloseConnection() {
 	err := p.sqlDB.Close()
 	if err != nil {
