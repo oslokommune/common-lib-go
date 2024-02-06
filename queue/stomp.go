@@ -44,6 +44,7 @@ func (s *StompClient) Publish(destination string, msg string) error {
 		destination, // destination
 		contentType,
 		[]byte(msg), // body
+		stomp.SendOpt.Receipt,
 		func(f *frame.Frame) error {
 			f.Header.Del(frame.ContentLength)
 			f.Header.Add("persistent", "true")
