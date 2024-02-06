@@ -10,14 +10,37 @@ import (
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig"
+	"go.opentelemetry.io/contrib/propagators/aws/xray"
+	"go.opentelemetry.io/otel"
 )
 
-func (e *GinEngine) StartServer(ctx context.Context) {
-	// Check if running as a lambda function
+func (e *GinEngine) StartServer(ctx context.Context, tracing bool) {
 	if lambdaruntime.IsRunningAsLambda() {
 		proxy := func(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 			return ginadapter.NewV2(e.engine).ProxyWithContext(ctx, req)
 		}
+
+		if tracing {
+			tp, err := xrayconfig.NewTracerProvider(ctx)
+			if err != nil {
+				log.Panic().Err(err).Msg("Error creating trace provider")
+			}
+
+			otel.SetTracerProvider(tp)
+			otel.SetTextMapPropagator(xray.Propagator{})
+
+			defer func(ctx context.Context) {
+				err := tp.Shutdown(ctx)
+				if err != nil {
+					log.Error().Err(err).Msg("Error shutting down tracer provider")
+				}
+			}(ctx)
+
+			lambda.Start(otellambda.InstrumentHandler(proxy, xrayconfig.WithRecommendedOptions(tp)...))
+		}
+
 		lambda.StartWithOptions(proxy, lambda.WithContext(ctx))
 	} else {
 		if err := e.engine.Run(); err != nil {
