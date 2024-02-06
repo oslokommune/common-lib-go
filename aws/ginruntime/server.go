@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -12,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/propagators/aws/xray"
 	"go.opentelemetry.io/otel"
 )
@@ -30,6 +32,7 @@ func (e *GinEngine) StartServer(ctx context.Context, tracing bool) {
 
 			otel.SetTracerProvider(tp)
 			otel.SetTextMapPropagator(xray.Propagator{})
+			e.engine.Use(otelgin.Middleware(os.Getenv("APP_LABEL"), otelgin.WithTracerProvider(tp), otelgin.WithPropagators(xray.Propagator{})))
 
 			defer func(ctx context.Context) {
 				err := tp.Shutdown(ctx)
