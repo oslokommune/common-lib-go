@@ -2,6 +2,7 @@ package queue
 
 import (
 	"crypto/tls"
+	"time"
 
 	stomp "github.com/go-stomp/stomp/v3"
 	"github.com/go-stomp/stomp/v3/frame"
@@ -14,10 +15,12 @@ type StompClient struct {
 func NewStompClient(broker, username, password string) (*StompClient, error) {
 	options := []func(*stomp.Conn) error{
 		stomp.ConnOpt.Login(username, password),
+		stomp.ConnOpt.HeartBeat(3*time.Second, 3*time.Second),
+		stomp.ConnOpt.UseStomp,
 	}
 
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true, // Set to false for production use with a valid certificate
+		InsecureSkipVerify: false, // Set to false for production use with a valid certificate
 	}
 
 	// Establish a TLS connection

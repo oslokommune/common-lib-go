@@ -2,14 +2,12 @@ package awsdynamodb
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
@@ -17,9 +15,9 @@ import (
 func NewClient(useTracing bool) *dynamodb.Client {
 	var cfg aws.Config
 
-	if lambdaruntime.IsRunningAsLambda() {
-		cfg, _ = config.LoadDefaultConfig(context.TODO())
-	} else {
+	//if lambdaruntime.IsRunningAsLambda() {
+	cfg, _ = config.LoadDefaultConfig(context.TODO())
+	/*} else {
 		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 			if service == dynamodb.ServiceID && region == "eu-north-1" {
 				return aws.Endpoint{
@@ -33,7 +31,7 @@ func NewClient(useTracing bool) *dynamodb.Client {
 
 		// Use the SDK's default configuration with region and custome endpoint resolver
 		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1"), config.WithEndpointResolverWithOptions(customResolver))
-	}
+	}*/
 
 	if useTracing {
 		otelaws.AppendMiddlewares(&cfg.APIOptions)

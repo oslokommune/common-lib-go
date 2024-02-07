@@ -1,10 +1,10 @@
 package ginruntime
 
 import (
-	"regexp"
+	"strings"
+	"text/template"
 
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,9 +31,9 @@ func NewGinEngine() *GinEngine {
 	// Global middleware
 	engine.Use(ErrorHandler())
 
-	var rxURL = regexp.MustCompile(`^/*`)
+	//var rxURL = regexp.MustCompile(`^/*`)
 	// Use zerolog for logging and turn off access logging for all paths
-	engine.Use(logger.SetLogger(logger.WithSkipPathRegexps(rxURL)))
+	//engine.Use(logger.SetLogger(logger.WithSkipPathRegexps(rxURL)))
 
 	// CORS config
 	corsConfig := cors.DefaultConfig()
@@ -76,8 +76,25 @@ func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, ha
 	setMethodHandler(method, path, group, handlers...)
 }
 
+func uppercase(input string) string {
+	return strings.ToUpper(input)
+}
+
+func filterBeforeChar(char, input string) string {
+	_, after, _ := strings.Cut(input, char)
+	return after
+}
+
 func (e *GinEngine) LoadHTLMGlob(path string) {
+	e.engine.SetFuncMap(template.FuncMap{
+		"uppercase":        uppercase,
+		"filterBeforeChar": filterBeforeChar,
+	})
 	e.engine.LoadHTMLGlob(path)
+}
+
+func (e *GinEngine) StaticDirectory(path string) {
+	e.engine.Static("/static", path)
 }
 
 // Adds middleware
