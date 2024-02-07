@@ -41,7 +41,7 @@ func (e *GinEngine) StartServer(ctx context.Context, tracing bool) {
 				}
 			}(ctx)
 
-			lambda.Start(otellambda.InstrumentHandler(proxy, xrayconfig.WithRecommendedOptions(tp)...))
+			lambda.StartWithOptions(otellambda.InstrumentHandler(proxy, xrayconfig.WithRecommendedOptions(tp)...), lambda.WithContext(ctx))
 		} else {
 			lambda.StartWithOptions(proxy, lambda.WithContext(ctx))
 		}
