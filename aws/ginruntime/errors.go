@@ -9,9 +9,9 @@ import (
 
 // Server response status code and associated error message
 type ApiError struct {
-	Status int
-	Reason string
 	Detail error
+	Reason string
+	Status int
 }
 
 func (this *ApiError) Error() string {

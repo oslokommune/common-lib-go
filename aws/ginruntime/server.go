@@ -32,7 +32,7 @@ func (e *GinEngine) StartServer(ctx context.Context, tracing bool) {
 
 			otel.SetTracerProvider(tp)
 			otel.SetTextMapPropagator(xray.Propagator{})
-			e.engine.Use(otelgin.Middleware(os.Getenv("APP_LABEL"), otelgin.WithTracerProvider(tp), otelgin.WithPropagators(xray.Propagator{})))
+			e.engine.Use(otelgin.Middleware(os.Getenv("APP_LABEL")))
 
 			defer func(ctx context.Context) {
 				err := tp.Shutdown(ctx)
@@ -42,9 +42,9 @@ func (e *GinEngine) StartServer(ctx context.Context, tracing bool) {
 			}(ctx)
 
 			lambda.Start(otellambda.InstrumentHandler(proxy, xrayconfig.WithRecommendedOptions(tp)...))
+		} else {
+			lambda.StartWithOptions(proxy, lambda.WithContext(ctx))
 		}
-
-		lambda.StartWithOptions(proxy, lambda.WithContext(ctx))
 	} else {
 		if err := e.engine.Run(); err != nil {
 			log.Info().Msgf("Error starting gin %v", err)
