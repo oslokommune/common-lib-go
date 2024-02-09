@@ -1,6 +1,7 @@
 package ginruntime
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestErrorHandler_ReturnsIndicatedStatus_WhenApiError(t *testing.T) {
-	engine := NewGinEngine()
+	engine := New(context.Background())
 	engine.Use(ErrorHandler())
 	engine.AddRoute(nil, "/", GET, func(c *gin.Context) {
 		c.Error(Unauthorized("not logged in"))
@@ -26,7 +27,7 @@ func TestErrorHandler_ReturnsIndicatedStatus_WhenApiError(t *testing.T) {
 }
 
 func TestErrorHandler_Returns404_When404HttpCommError(t *testing.T) {
-	engine := NewGinEngine()
+	engine := New(context.Background())
 	engine.Use(ErrorHandler())
 	engine.AddRoute(nil, "/", GET, func(c *gin.Context) {
 		c.Error(&httpcomm.HTTPError{Body: "test", StatusCode: 404})
@@ -40,7 +41,7 @@ func TestErrorHandler_Returns404_When404HttpCommError(t *testing.T) {
 }
 
 func TestErrorHandler_Returns403_When403HttpCommError(t *testing.T) {
-	engine := NewGinEngine()
+	engine := New(context.Background())
 	engine.Use(ErrorHandler())
 	engine.AddRoute(nil, "/", GET, func(c *gin.Context) {
 		c.Error(&httpcomm.HTTPError{Body: "test", StatusCode: 403})
@@ -54,7 +55,7 @@ func TestErrorHandler_Returns403_When403HttpCommError(t *testing.T) {
 }
 
 func TestErrorHandler_Returns424_WhenGeneralHttpCommError(t *testing.T) {
-	engine := NewGinEngine()
+	engine := New(context.Background())
 	engine.Use(ErrorHandler())
 	engine.AddRoute(nil, "/", GET, func(c *gin.Context) {
 		c.Error(&httpcomm.HTTPError{Body: "test", StatusCode: 429})
@@ -67,7 +68,7 @@ func TestErrorHandler_Returns424_WhenGeneralHttpCommError(t *testing.T) {
 }
 
 func TestErrorHandler_Returns500_WhenGeneralError(t *testing.T) {
-	engine := NewGinEngine()
+	engine := New(context.Background())
 	engine.Use(ErrorHandler())
 	engine.AddRoute(nil, "/", GET, func(c *gin.Context) {
 		c.Error(errors.New("error"))

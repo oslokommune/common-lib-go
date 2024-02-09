@@ -1,11 +1,13 @@
 package ginruntime
 
 import (
-	"strings"
+	"context"
 	"text/template"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 // Exporting constants to avoid hardcoding these all over, and ending up with a uppercase "POST" bug in the future.
@@ -18,10 +20,14 @@ const (
 )
 
 type GinEngine struct {
-	engine *gin.Engine
+	ctx        context.Context
+	engine     *gin.Engine
+	tp         *trace.TracerProvider
+	propagator propagation.TextMapPropagator
+	onShutdown []func()
 }
 
-func NewGinEngine() *GinEngine {
+func New(ctx context.Context) *GinEngine {
 	// Creates a router without any middleware by default
 	engine := gin.New()
 
@@ -31,9 +37,9 @@ func NewGinEngine() *GinEngine {
 	// Global middleware
 	engine.Use(ErrorHandler())
 
-	//var rxURL = regexp.MustCompile(`^/*`)
+	// var rxURL = regexp.MustCompile(`^/*`)
 	// Use zerolog for logging and turn off access logging for all paths
-	//engine.Use(logger.SetLogger(logger.WithSkipPathRegexps(rxURL)))
+	// engine.Use(logger.SetLogger(logger.WithSkipPathRegexps(rxURL)))
 
 	// CORS config
 	corsConfig := cors.DefaultConfig()
@@ -46,7 +52,18 @@ func NewGinEngine() *GinEngine {
 	// Recover from panics
 	engine.Use(gin.Recovery())
 
-	return &GinEngine{engine}
+	return &GinEngine{ctx, engine, nil, nil, make([]func(), 0)}
+}
+
+func (e *GinEngine) OnShutdown(f func()) {
+	e.onShutdown = append(e.onShutdown, f)
+}
+
+func (e *GinEngine) shutdownCallbacks() {
+	for _, f := range e.onShutdown {
+		defer f()
+	}
+	e.onShutdown = []func(){}
 }
 
 func setMethodHandler(method int, path string, group *gin.RouterGroup, handlers ...gin.HandlerFunc) {
@@ -76,20 +93,8 @@ func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, ha
 	setMethodHandler(method, path, group, handlers...)
 }
 
-func uppercase(input string) string {
-	return strings.ToUpper(input)
-}
-
-func filterBeforeChar(char, input string) string {
-	_, after, _ := strings.Cut(input, char)
-	return after
-}
-
-func (e *GinEngine) LoadHTLMGlob(path string) {
-	e.engine.SetFuncMap(template.FuncMap{
-		"uppercase":        uppercase,
-		"filterBeforeChar": filterBeforeChar,
-	})
+func (e *GinEngine) LoadHTLMGlob(path string, funcMap template.FuncMap) {
+	e.engine.SetFuncMap(funcMap)
 	e.engine.LoadHTMLGlob(path)
 }
 
