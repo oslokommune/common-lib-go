@@ -2,43 +2,47 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"reflect"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 )
 
-func PerformSelect(dbConn *sqlx.DB, result interface{}, query string, params ...interface{}) error {
-	err := dbConn.Select(result, query, params...)
+func PerformSelect(dbConn *sqlx.DB, result interface{}, query string, params ...interface{}) (empty bool, err error) {
+	log.Debug().Msgf("Execution query: %s, %v", query, params)
+
+	err = dbConn.Select(result, query, params...)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to execute sql query.")
-		return err
+		log.Debug().Err(err).Msg("Failed to execute sql query.")
+		return
 	}
 	num := reflect.ValueOf(result).Elem().Len()
 	if num == 0 {
-		return sql.ErrNoRows
+		empty = true
 	}
-	return nil
+	return
 }
 
-func PerformGet(dbConn *sqlx.DB, result interface{}, query string, params ...interface{}) error {
-	err := dbConn.Get(result, query, params...)
+func PerformGet(dbConn *sqlx.DB, result interface{}, query string, params ...interface{}) (empty bool, err error) {
+	log.Debug().Msgf("Execution query: %s, %v", query, params)
+
+	err = dbConn.Get(result, query, params...)
 	if err != nil {
-		if err != sql.ErrNoRows {
-			log.Error().Err(err).Msg("Failed to execute sql query.")
+		if errors.Is(err, sql.ErrNoRows) {
+			empty = true
+			err = nil
+		} else {
+			log.Debug().Err(err).Msg("Failed to execute sql query.")
 		}
-		return err
 	}
-	return nil
+	return
 }
 
-func PerformExec(dbConn *sqlx.DB, query string, params ...interface{}) error {
-	_, err := dbConn.Exec(query, params...)
+func PerformExec(dbConn *sqlx.DB, query string, params ...interface{}) (result sql.Result, err error) {
+	result, err = dbConn.Exec(query, params...)
 	if err != nil {
-		if err != sql.ErrNoRows {
-			log.Error().Err(err).Msg("Failed to execute sql query.")
-		}
-		return err
+		log.Debug().Err(err).Msg("Failed to execute sql query.")
 	}
-	return nil
+	return
 }

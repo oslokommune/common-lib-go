@@ -3,6 +3,7 @@ package ginruntime
 import (
 	"context"
 	"regexp"
+	"text/template"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/logger"
@@ -38,7 +39,7 @@ func New(ctx context.Context) *GinEngine {
 	// Global middleware
 	engine.Use(ErrorHandler())
 
-	var rxURL = regexp.MustCompile(`^/*`)
+	rxURL := regexp.MustCompile(`^/*`)
 	// Use zerolog for logging and turn off access logging for all paths
 	engine.Use(logger.SetLogger(logger.WithSkipPathRegexps(rxURL)))
 
@@ -92,6 +93,15 @@ func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, ha
 		group = e.engine.Group("/")
 	}
 	setMethodHandler(method, path, group, handlers...)
+}
+
+func (e *GinEngine) LoadHTLMGlob(path string, funcMap template.FuncMap) {
+	e.engine.SetFuncMap(funcMap)
+	e.engine.LoadHTMLGlob(path)
+}
+
+func (e *GinEngine) StaticDirectory(path string) {
+	e.engine.Static("/static", path)
 }
 
 // Adds middleware

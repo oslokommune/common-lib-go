@@ -3,7 +3,7 @@ package awsssm
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -18,7 +18,7 @@ func NewClient(useTracing bool) *ssm.Client {
 	if lambdaruntime.IsRunningAsLambda() {
 		cfg, _ = config.LoadDefaultConfig(context.TODO())
 	} else {
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
+		/*	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
 			if service == ssm.ServiceID && region == "eu-north-1" {
 				return aws.Endpoint{
 					PartitionID:   "aws",
@@ -27,9 +27,9 @@ func NewClient(useTracing bool) *ssm.Client {
 				}, nil
 			}
 			return aws.Endpoint{}, fmt.Errorf("unknown endpoint requested")
-		})
+		})*/
 		// Use the SDK's default configuration with region and custome endpoint resolver
-		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1"), config.WithEndpointResolverWithOptions(customResolver))
+		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1")) //, config.WithEndpointResolverWithOptions(customResolver))
 	}
 
 	if useTracing {
@@ -49,6 +49,21 @@ type GetParameterAPI interface {
 
 func getParameter(ctx context.Context, api GetParameterAPI, input *ssm.GetParameterInput) (*ssm.GetParameterOutput, error) {
 	return api.GetParameter(ctx, input)
+}
+
+func GetParameterStoreParameterString(ctx context.Context, client GetParameterAPI, name string) (*string, error) {
+	bool := aws.Bool(true)
+	input := ssm.GetParameterInput{
+		Name:           aws.String(name),
+		WithDecryption: bool,
+	}
+
+	output, err := getParameter(ctx, client, &input)
+	if err != nil {
+		return nil, err
+	}
+
+	return output.Parameter.Value, nil
 }
 
 func GetParameterStoreParameter(ctx context.Context, client GetParameterAPI, name string, container any) error {
