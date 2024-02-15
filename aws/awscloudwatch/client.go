@@ -17,25 +17,7 @@ import (
 )
 
 func NewLogsClient(useTracing bool) *cloudwatchlogs.Client {
-	var cfg aws.Config
-
-	if lambdaruntime.IsRunningAsLambda() {
-		cfg, _ = config.LoadDefaultConfig(context.TODO())
-	} else {
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-			if service == cloudwatchlogs.ServiceID && region == "eu-north-1" {
-				return aws.Endpoint{
-					PartitionID:   "aws",
-					URL:           "http://localhost:4566",
-					SigningRegion: "eu-north-1",
-				}, nil
-			}
-			return aws.Endpoint{}, fmt.Errorf("unknown endpoint requested")
-		})
-
-		// Use the SDK's default configuration with region and custome endpoint resolver
-		cfg, _ = config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-north-1"), config.WithEndpointResolverWithOptions(customResolver))
-	}
+	cfg, _ := config.LoadDefaultConfig(context.TODO())
 
 	if useTracing {
 		otelaws.AppendMiddlewares(&cfg.APIOptions)
@@ -157,7 +139,6 @@ func FetchCloudwatchLogs(ctx context.Context, logGroupName, logStreamName string
 		}
 
 		logEventsOutput, err = getLogEvents(ctx, &logEventsInput, client)
-
 		if err != nil {
 			return
 		}
