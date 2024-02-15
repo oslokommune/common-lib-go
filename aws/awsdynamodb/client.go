@@ -76,6 +76,9 @@ func UpdateTableItem(ctx context.Context, tablename string, client DynamoDBUpdat
 	}
 
 	expr, err := expression.NewBuilder().WithUpdate(upd).Build()
+	if err != nil {
+		return nil, err
+	}
 
 	input := dynamodb.UpdateItemInput{
 		TableName:                 aws.String(tablename),
@@ -129,7 +132,7 @@ func ReadAllTableData[T any](ctx context.Context, tablename string, client Dynam
 		TableName: aws.String(tablename),
 	}
 
-	info, err := scanTable(context.Background(), client, &input)
+	info, err := scanTable(ctx, client, &input)
 	if err != nil {
 		log.Error().Err(err).Msg("could not read from dynamodb.")
 		return nil
