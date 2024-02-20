@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
-	"github.com/oslokommune/common-lib-go/aws/lambdaruntime"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
 )
@@ -19,6 +18,7 @@ func (e *GinEngine) lambdaProxy() func(ctx context.Context, req any) (any, error
 	proxy = func(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 		return ginadapter.NewV2(e.engine).ProxyWithContext(ctx, req)
 	}
+
 	if e.TracingEnabled() {
 		proxy = otellambda.InstrumentHandler(proxy, e.OTelLambdaOptions()...).(func(context.Context, any) (any, error))
 	}
@@ -28,7 +28,7 @@ func (e *GinEngine) lambdaProxy() func(ctx context.Context, req any) (any, error
 func (e *GinEngine) StartServer() {
 	defer e.shutdownCallbacks()
 
-	if lambdaruntime.IsRunningAsLambda() {
+	if IsRunningAsLambda() {
 		proxy := e.lambdaProxy()
 		lambda.StartWithOptions(proxy, lambda.WithContext(e.ctx))
 	} else {
