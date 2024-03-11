@@ -21,10 +21,11 @@ type GinEngine struct {
 	engine     *gin.Engine
 	tp         *trace.TracerProvider
 	propagator propagation.TextMapPropagator
+	openapi    *OpenAPI
 	onShutdown []func()
 }
 
-func New(ctx context.Context) *GinEngine {
+func New(ctx context.Context, options ...Option) *GinEngine {
 
 	configureLogging()
 
@@ -52,7 +53,13 @@ func New(ctx context.Context) *GinEngine {
 	// Recover from panics
 	engine.Use(RecoveryMiddleware)
 
-	return &GinEngine{ctx, engine, nil, nil, make([]func(), 0)}
+	e := &GinEngine{ctx, engine, nil, nil, nil, make([]func(), 0)}
+	for _, option := range options {
+		if option.openapi != nil {
+			e.EnableOpenAPI(option.openapi)
+		}
+	}
+	return e
 }
 
 func (e *GinEngine) OnShutdown(f func()) {

@@ -4,6 +4,7 @@ import (
 	"text/template"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 // Exporting constants to avoid hardcoding these all over, and ending up with a uppercase "POST" bug in the future.
@@ -35,11 +36,17 @@ func (e *GinEngine) NewGroup(path string, handlers ...gin.HandlerFunc) *gin.Rout
 }
 
 // AddRoute Add a new endpoint mapping
-func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, handlers ...gin.HandlerFunc) {
+func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, handler gin.HandlerFunc, annotations ...Annotation) {
 	if group == nil {
 		group = e.engine.Group("/")
 	}
-	setMethodHandler(method, path, group, handlers...)
+	setMethodHandler(method, path, group, handler)
+
+	if e.openapi != nil {
+		if err := e.openapi.Add(method, path, annotations...); err != nil {
+			log.Warn().Err(err).Msgf("Invalid OpenAPI annotation for route %s", path)
+		}
+	}
 }
 
 func (e *GinEngine) LoadHTLMGlob(path string, funcMap template.FuncMap) {
