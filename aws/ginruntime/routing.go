@@ -1,9 +1,11 @@
 package ginruntime
 
 import (
+	"net/http"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oslokommune/common-lib-go/aws/ginruntime/openapi"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,15 +38,15 @@ func (e *GinEngine) NewGroup(path string, handlers ...gin.HandlerFunc) *gin.Rout
 }
 
 // AddRoute Add a new endpoint mapping
-func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, handler gin.HandlerFunc, annotations ...Annotation) {
+func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, annotations openapi.Annotations, handler ...gin.HandlerFunc) {
 	if group == nil {
 		group = e.engine.Group("/")
 	}
-	setMethodHandler(method, path, group, handler)
+	setMethodHandler(method, path, group, handler...)
 
-	if e.openapi != nil {
-		if err := e.openapi.Add(method, path, annotations...); err != nil {
-			log.Warn().Err(err).Msgf("Invalid OpenAPI annotation for route %s", path)
+	if e.openapi != nil && annotations != nil {
+		if err := e.openapi.Add(getMethodName(method), path, annotations); err != nil {
+			log.Warn().Err(err).Msgf("Failed to add OpenAPI annotation for route %s", path)
 		}
 	}
 }
@@ -61,4 +63,22 @@ func (e *GinEngine) StaticDirectory(path string) {
 // Adds middleware
 func (e *GinEngine) Use(middleware ...gin.HandlerFunc) {
 	e.engine.Use(middleware...)
+}
+
+func getMethodName(method int) string {
+	switch method {
+	case GET:
+		return http.MethodGet
+	case POST:
+		return http.MethodPost
+	case PUT:
+		return http.MethodPut
+	case PATCH:
+		return http.MethodPatch
+	case DELETE:
+		return http.MethodDelete
+	default:
+		log.Fatal().Msgf("Unexpected method %d in OpenAPI annotation", method)
+		return ""
+	}
 }

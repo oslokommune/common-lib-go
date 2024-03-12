@@ -2,7 +2,6 @@ package ginruntime
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -16,12 +15,8 @@ import (
 func (e *GinEngine) lambdaProxy() func(ctx context.Context, req any) (any, error) {
 	var proxy any
 
-	proxy = func(ctx context.Context, req any) (any, error) {
-		typedReq, ok := req.(events.APIGatewayV2HTTPRequest)
-		if !ok {
-			return events.APIGatewayV2HTTPResponse{StatusCode: 500}, fmt.Errorf("Unsupported request type: %T", req)
-		}
-		return ginadapter.NewV2(e.engine).ProxyWithContext(ctx, typedReq)
+	proxy = func(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+		return ginadapter.NewV2(e.engine).ProxyWithContext(ctx, req)
 	}
 
 	if e.TracingEnabled() {
