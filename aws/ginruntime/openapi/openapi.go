@@ -24,7 +24,6 @@ func New(title string,
 ) *OpenAPI {
 	swaggerUiDistUrl = strings.TrimSuffix(swaggerUiDistUrl, "/")
 
-	log.Info().Msgf("Creating new OpenAPI spec for %s with Swagger UI static files from %s", title, version, description, swaggerUiDistUrl)
 	r := openapi31.NewReflector()
 	r.Spec = &openapi31.Spec{Openapi: "3.1.0"}
 	r.Spec.Info.

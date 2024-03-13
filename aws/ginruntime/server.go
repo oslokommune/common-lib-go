@@ -20,7 +20,7 @@ func (e *GinEngine) lambdaProxy() func(ctx context.Context, req any) (any, error
 	}
 
 	if e.TracingEnabled() {
-		proxy = otellambda.InstrumentHandler(proxy, e.OTelLambdaOptions()...).(func(context.Context, any) (any, error))
+		proxy = otellambda.InstrumentHandler(proxy, e.oTelLambdaOptions()...).(func(context.Context, any) (any, error))
 	}
 	return proxy.(func(context.Context, any) (any, error))
 }

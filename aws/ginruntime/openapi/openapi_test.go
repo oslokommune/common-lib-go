@@ -14,5 +14,6 @@ func TestOpenAPIGenerateSchema(t *testing.T) {
 	assert.NoError(t, err)
 
 	log.Info().Msg(string(schema))
-	assert.JSONEq(t, `{}`, string(schema))
+	expected := "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"App\",\"description\":\"Test\",\"version\":\"1.0.0\"},\"paths\":{\"/\":{\"get\":{\"operationId\":\"GET-/\",\"responses\":{\"200\":{\"description\":\"OK\",\"content\":{\"application/json\":{\"schema\":{\"format\":\"binary\",\"type\":\"string\"}}}},\"404\":{\"description\":\"Not Found\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"string\"}}}}}}}}}"
+	assert.JSONEq(t, expected, string(schema))
 }

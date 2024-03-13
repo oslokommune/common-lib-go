@@ -44,7 +44,7 @@ func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, an
 	}
 	setMethodHandler(method, path, group, handler...)
 
-	if e.openapi != nil && annotations != nil {
+	if e.OpenAPIEnabled() && annotations != nil {
 		if err := e.openapi.Add(getMethodName(method), path, annotations); err != nil {
 			log.Warn().Err(err).Msgf("Failed to add OpenAPI annotation for route %s", path)
 		}

@@ -55,11 +55,7 @@ func New(ctx context.Context, options ...Option) *GinEngine {
 	engine.Use(RecoveryMiddleware)
 
 	e := &GinEngine{ctx, engine, nil, nil, nil, make([]func(), 0)}
-	for _, option := range options {
-		if option.openapi != nil {
-			e.enableOpenAPI(option.openapi)
-		}
-	}
+	e.apply(options...)
 	return e
 }
 
