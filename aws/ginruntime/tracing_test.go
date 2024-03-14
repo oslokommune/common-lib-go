@@ -68,8 +68,7 @@ func TestTracingEnabled_ReturnsFalse_ByDefault(t *testing.T) {
 
 func TestTracingEnabled_ReturnsTrue_AfterEnableCustomTracingCalled(t *testing.T) {
 	interceptor := NewInterceptingTracerProvider(func(spans []trace.ReadOnlySpan) {})
-	engine := New(context.Background())
-	engine.EnableCustomTracing("test", interceptor, &xray.Propagator{})
+	engine := New(context.Background(), WithTracing("test", interceptor, &xray.Propagator{}))
 	assert.True(t, engine.TracingEnabled())
 }
 
@@ -80,9 +79,8 @@ func TestMiddleware_TracesHttpServerSpans(t *testing.T) {
 		spans = append(spans, exportedSpans...)
 	})
 
-	engine := New(ctx)
-	engine.EnableCustomTracing("test", interceptor, &xray.Propagator{})
-	engine.AddRoute(nil, "/foo/:bar", GET, func(c *gin.Context) {
+	engine := New(context.Background(), WithTracing("test", interceptor, &xray.Propagator{}))
+	engine.AddRoute(nil, "/foo/:bar", GET, nil, func(c *gin.Context) {
 		c.JSON(200, "bar")
 	})
 
@@ -103,10 +101,9 @@ func TestMiddleware_TracesHttpServerSpansWithExpectedAttributes(t *testing.T) {
 		spans = append(spans, exportedSpans...)
 	})
 
-	engine := New(ctx)
-	engine.EnableCustomTracing(service, interceptor, &xray.Propagator{})
+	engine := New(context.Background(), WithTracing(service, interceptor, &xray.Propagator{}))
 
-	engine.AddRoute(nil, "/foo/:bar", GET, func(c *gin.Context) {
+	engine.AddRoute(nil, "/foo/:bar", GET, nil, func(c *gin.Context) {
 		c.JSON(200, "bar")
 	})
 
@@ -155,9 +152,8 @@ func TestEnableTracing_TracesLambdaInvocationWithExpectedAttributes(t *testing.T
 		spans = append(spans, exportedSpans...)
 	})
 
-	engine := New(ctx)
-	engine.EnableCustomTracing(service, interceptor, &xray.Propagator{})
-	engine.AddRoute(nil, "/foo/:bar", GET, func(c *gin.Context) {
+	engine := New(ctx, WithTracing(service, interceptor, &xray.Propagator{}))
+	engine.AddRoute(nil, "/foo/:bar", GET, nil, func(c *gin.Context) {
 		c.JSON(200, "bar")
 	})
 
@@ -197,9 +193,8 @@ func TestEnableTracing_TracesOtelHttpClientSpansAsSubsegments(t *testing.T) {
 		spans = append(spans, exportedSpans...)
 	})
 
-	engine := New(ctx)
-	engine.EnableCustomTracing(service, interceptor, &xray.Propagator{})
-	engine.AddRoute(nil, "/foo/:bar", GET, func(c *gin.Context) {
+	engine := New(ctx, WithTracing(service, interceptor, &xray.Propagator{}))
+	engine.AddRoute(nil, "/foo/:bar", GET, nil, func(c *gin.Context) {
 		c.JSON(200, "bar")
 		_, _ = otelhttp.Get(c.Request.Context(), "https://test")
 	})
@@ -235,9 +230,9 @@ func TestEnableTracing_TracesHttpClientSpansAsSegments_WhenUsingOtelTransport(t 
 		spans = append(spans, exportedSpans...)
 	})
 
-	engine := New(ctx)
-	engine.EnableCustomTracing(service, interceptor, &xray.Propagator{})
-	engine.AddRoute(nil, "/foo/:bar", GET, func(c *gin.Context) {
+	engine := New(ctx, WithTracing(service, interceptor, &xray.Propagator{}))
+
+	engine.AddRoute(nil, "/foo/:bar", GET, nil, func(c *gin.Context) {
 		c.JSON(200, "bar")
 
 		client := &http.Client{

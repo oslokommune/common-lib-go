@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/oslokommune/common-lib-go/aws/ginruntime/openapi"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel/propagation"
@@ -21,10 +22,11 @@ type GinEngine struct {
 	engine     *gin.Engine
 	tp         *trace.TracerProvider
 	propagator propagation.TextMapPropagator
+	openapi    *openapi.OpenAPI
 	onShutdown []func()
 }
 
-func New(ctx context.Context) *GinEngine {
+func New(ctx context.Context, options ...Option) *GinEngine {
 
 	configureLogging()
 
@@ -52,7 +54,9 @@ func New(ctx context.Context) *GinEngine {
 	// Recover from panics
 	engine.Use(RecoveryMiddleware)
 
-	return &GinEngine{ctx, engine, nil, nil, make([]func(), 0)}
+	e := &GinEngine{ctx, engine, nil, nil, nil, make([]func(), 0)}
+	e.apply(options...)
+	return e
 }
 
 func (e *GinEngine) OnShutdown(f func()) {
