@@ -1,6 +1,7 @@
 package ginruntime
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/oslokommune/common-lib-go/aws/ginruntime/openapi"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig"
@@ -14,6 +15,7 @@ type OpenAPIOptions struct {
 	version          string
 	description      string
 	swaggerUiDistUrl string
+	middleware       []gin.HandlerFunc
 }
 
 type TracingOptions struct {
@@ -38,6 +40,7 @@ func WithOpenAPI(
 	version string,
 	description string,
 	swaggerUiDistUrl string,
+	middleware ...gin.HandlerFunc,
 ) Option {
 	return Option{
 		openapi: &OpenAPIOptions{
@@ -45,6 +48,7 @@ func WithOpenAPI(
 			version:          version,
 			description:      description,
 			swaggerUiDistUrl: swaggerUiDistUrl,
+			middleware:       middleware,
 		},
 	}
 }
@@ -134,6 +138,6 @@ func (e *GinEngine) enableTracing(options *TracingOptions) {
 func (e *GinEngine) enableOpenAPI(options *OpenAPIOptions) {
 	e.openapi = openapi.New(options.service, options.version, options.description, options.swaggerUiDistUrl)
 
-	e.AddRoute(nil, "/openapi.json", GET, nil, e.openapi.JsonSpecRoute)
-	e.AddRoute(nil, "/docs", GET, nil, e.openapi.UiRoute)
+	e.AddRoute(nil, "/openapi.json", GET, nil, append(options.middleware, e.openapi.JsonSpecRoute)...)
+	e.AddRoute(nil, "/docs", GET, nil, append(options.middleware, e.openapi.UiRoute)...)
 }
