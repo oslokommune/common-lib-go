@@ -6,6 +6,8 @@ import (
 	amqp "github.com/Azure/go-amqp"
 )
 
+var _ ActiveMQApi = (*AMQPClient)(nil)
+
 type AMQPClient struct {
 	conn *amqp.Conn
 }
@@ -14,7 +16,7 @@ func (a *AMQPClient) Disconnect() {
 	a.conn.Close()
 }
 
-func (a *AMQPClient) Publish(topic string, message string) error {
+func (a *AMQPClient) Publish(topic string, message string, header ...Header) error {
 	// open a session
 	session, err := a.conn.NewSession(context.Background(), nil)
 	if err != nil {

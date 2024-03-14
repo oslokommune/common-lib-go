@@ -4,6 +4,8 @@ import (
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
+var _ ActiveMQApi = (*MQTTClient)(nil)
+
 type MQTTClient struct {
 	client MQTT.Client
 }
@@ -27,7 +29,8 @@ func NewMQTTClient(broker, username, password string) (*MQTTClient, error) {
 	}, nil
 }
 
-func (m *MQTTClient) Publish(topic, message string) error {
+func (m *MQTTClient) Publish(topic, message string, header ...Header) error {
+	// TODO: implement headers
 	m.client.Publish(topic, byte(0), false, message)
 	return nil
 }

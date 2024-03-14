@@ -9,6 +9,8 @@ import (
 	"github.com/go-stomp/stomp/v3/frame"
 )
 
+var _ ActiveMQApi = (*StompClient)(nil)
+
 type StompClient struct {
 	conn                       *stomp.Conn
 	broker, username, password string
@@ -46,7 +48,7 @@ func (s *StompClient) Connect() error {
 }
 
 // Publish pulishes message to queue. Will reconnect if connection is already closed
-func (s *StompClient) Publish(destination string, msg string) error {
+func (s *StompClient) Publish(destination string, msg string, header ...Header) error {
 	err := s.send(destination, msg)
 	if err != nil {
 		switch {
@@ -65,7 +67,7 @@ func (s *StompClient) Publish(destination string, msg string) error {
 	return nil
 }
 
-func (s *StompClient) send(destination string, msg string) error {
+func (s *StompClient) send(destination string, msg string, header ...Header) error {
 	contentType := "application/json;charset=utf-8"
 	if len(msg) > 0 && msg[0] == '<' {
 		contentType = "application/xml;charset=utf-8"
@@ -80,6 +82,9 @@ func (s *StompClient) send(destination string, msg string) error {
 			f.Header.Del(frame.ContentLength)
 			f.Header.Add("persistent", "true")
 			f.Header.Add("Destination", destination)
+			for _, h := range header {
+				f.Header.Add(h.Key, h.Value)
+			}
 			return nil
 		})
 }
