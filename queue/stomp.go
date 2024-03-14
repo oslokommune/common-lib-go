@@ -49,7 +49,7 @@ func (s *StompClient) Connect() error {
 
 // Publish pulishes message to queue. Will reconnect if connection is already closed
 func (s *StompClient) Publish(destination string, msg string, header ...Header) error {
-	err := s.send(destination, msg)
+	err := s.send(destination, msg, header...)
 	if err != nil {
 		switch {
 		case errors.As(err, &stomp.ErrAlreadyClosed):
@@ -58,7 +58,7 @@ func (s *StompClient) Publish(destination string, msg string, header ...Header) 
 				if connErr != nil {
 					return connErr
 				}
-				return s.send(destination, msg)
+				return s.send(destination, msg, header...)
 			}
 		default:
 			return err
