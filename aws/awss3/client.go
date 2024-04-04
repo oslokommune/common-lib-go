@@ -84,6 +84,7 @@ func ListBucketObjects(ctx context.Context, client ListObjectsV2API, bucketName 
 	return list, nil
 }
 
+// DownloadFile downloads file from S3 and returns it as a byte slice
 func DownloadFile(ctx context.Context, api GetObjectAPI, bucketName string, objectKey string) ([]byte, error) {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
@@ -104,6 +105,22 @@ func DownloadFile(ctx context.Context, api GetObjectAPI, bucketName string, obje
 	return bytes, nil
 }
 
+// DownloadFileStream downloads file from S3 and returns the io.ReadCloser. This must be closed by the callee function!
+func DownloadFileStream(ctx context.Context, api GetObjectAPI, bucketName string, objectKey string) (io.ReadCloser, error) {
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
+	}
+
+	output, err := getObject(ctx, api, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return output.Body, nil
+}
+
+// DownloadFileLarge downloads file from S3 using download manager and returns it as a byte slice
 func DownloadLargeFile(ctx context.Context, api GetObjectAPI, bucketName string, objectKey string) ([]byte, error) {
 	buffer := manager.NewWriteAtBuffer([]byte{})
 
