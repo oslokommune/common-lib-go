@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
 )
 
-func (e *GinEngine) lambdaProxy() func(ctx context.Context, req any) (any, error) {
+func (e *GinEngine) lambdaProxy() any {
 	var proxy any
 
 	proxy = func(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
@@ -20,9 +20,10 @@ func (e *GinEngine) lambdaProxy() func(ctx context.Context, req any) (any, error
 	}
 
 	if e.TracingEnabled() {
-		proxy = otellambda.InstrumentHandler(proxy, e.oTelLambdaOptions()...).(func(context.Context, any) (any, error))
+		proxy = otellambda.InstrumentHandler(proxy, e.oTelLambdaOptions()...)
 	}
-	return proxy.(func(context.Context, any) (any, error))
+
+	return proxy
 }
 
 func (e *GinEngine) StartServer() {
