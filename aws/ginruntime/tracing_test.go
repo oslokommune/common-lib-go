@@ -157,7 +157,7 @@ func TestEnableTracing_TracesLambdaInvocationWithExpectedAttributes(t *testing.T
 		c.JSON(200, "bar")
 	})
 
-	proxy := engine.lambdaProxy()
+	proxy := engine.lambdaProxy().(func(context.Context, any) (any, error))
 	req := events.APIGatewayV2HTTPRequest{
 		RawPath: "/foo/test",
 	}
