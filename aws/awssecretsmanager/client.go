@@ -44,7 +44,7 @@ func GetSecret(ctx context.Context, client GetSecretValueApi, secretName string)
 	if err != nil {
 		var ae smithy.APIError
 		if errors.As(err, &ae) {
-			log.Printf("call to secretsmanager failed with code: %s, message: %s, fault: %s", ae.ErrorCode(), ae.ErrorMessage(), ae.ErrorFault().String())
+			log.Error().Err(err).Msgf("call to secretsmanager failed with code: %s, message: %s, fault: %s", ae.ErrorCode(), ae.ErrorMessage(), ae.ErrorFault().String())
 		}
 		return nil, err
 	}
@@ -64,5 +64,39 @@ func GetSecret(ctx context.Context, client GetSecretValueApi, secretName string)
 		}
 		decodedBinarySecret = string(decodedBinarySecretBytes[:len])
 		return &decodedBinarySecret, nil
+	}
+}
+
+// fetches SecretsMananger value with context which enables instrumenting
+func GetSecretWithVersion(ctx context.Context, client GetSecretValueApi, secretName string) (*string, *string, error) {
+	input := secretsmanager.GetSecretValueInput{
+		SecretId:     aws.String(secretName),
+		VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified
+	}
+
+	result, err := getSecretValue(ctx, client, &input)
+	if err != nil {
+		var ae smithy.APIError
+		if errors.As(err, &ae) {
+			log.Error().Err(err).Msgf("call to secretsmanager failed with code: %s, message: %s, fault: %s", ae.ErrorCode(), ae.ErrorMessage(), ae.ErrorFault().String())
+		}
+		return nil, nil, err
+	}
+
+	// Decrypts secret using the associated KMS key.
+	// Depending on whether the secret is a string or binary, one of these fields will be populated.
+	var secretString, decodedBinarySecret string
+	if result.SecretString != nil {
+		secretString = *result.SecretString
+		return &secretString, result.VersionId, nil
+	} else {
+		decodedBinarySecretBytes := make([]byte, base64.StdEncoding.DecodedLen(len(result.SecretBinary)))
+		len, err := base64.StdEncoding.Decode(decodedBinarySecretBytes, result.SecretBinary)
+		if err != nil {
+			log.Err(err).Msg("Base64 Decode Error")
+			return nil, nil, err
+		}
+		decodedBinarySecret = string(decodedBinarySecretBytes[:len])
+		return &decodedBinarySecret, result.VersionId, nil
 	}
 }

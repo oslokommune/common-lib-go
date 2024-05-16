@@ -50,6 +50,14 @@ type GetMetricDataApi interface {
 	GetMetricData(ctx context.Context, input *cloudwatch.GetMetricDataInput, optionFns ...func(*cloudwatch.Options)) (*cloudwatch.GetMetricDataOutput, error)
 }
 
+type StartLiveTailApi interface {
+	StartLiveTail(ctx context.Context, params *cloudwatchlogs.StartLiveTailInput, optFns ...func(*cloudwatchlogs.Options)) (*cloudwatchlogs.StartLiveTailOutput, error) 
+}
+
+func startLiveTail(ctx context.Context, input *cloudwatchlogs.StartLiveTailInput, client StartLiveTailApi) (*cloudwatchlogs.StartLiveTailOutput, error) {
+	return client.StartLiveTail(ctx, input)
+}
+
 func describeLogStreams(ctx context.Context, input *cloudwatchlogs.DescribeLogStreamsInput, client DescribeLogStreamsApi) (*cloudwatchlogs.DescribeLogStreamsOutput, error) {
 	return client.DescribeLogStreams(ctx, input)
 }
@@ -60,6 +68,19 @@ func getLogEvents(ctx context.Context, input *cloudwatchlogs.GetLogEventsInput, 
 
 func getMetricData(ctx context.Context, input *cloudwatch.GetMetricDataInput, client GetMetricDataApi) (*cloudwatch.GetMetricDataOutput, error) {
 	return client.GetMetricData(ctx, input)
+}
+
+func TailLogs(ctx context.Context, logGroupArn string, client StartLiveTailApi) (*cloudwatchlogs.StartLiveTailEventStream, error) {
+	input := &cloudwatchlogs.StartLiveTailInput{
+		LogGroupIdentifiers:   []string{logGroupArn},
+	}
+
+	response, err := startLiveTail(ctx, input, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.GetStream(), nil
 }
 
 // FetchLogStreams reads available logstreams from the specified cloudwatch LogGroup and returns them as a slice.
