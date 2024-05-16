@@ -17,12 +17,16 @@ func jsonErrorReporter(errType gin.ErrorType) gin.HandlerFunc {
 		// continue down the chain
 		c.Next()
 
+		errorList := c.Errors.ByType(errType)
+		for _, e := range errorList {
+			log.Error().Err(e).Msg("Something happened")
+		}
+
 		if c.IsAborted() {
 			return
 		}
 
 		// read possible errors from application
-		errorList := c.Errors.ByType(errType)
 		if len(errorList) < 1 {
 			return
 		}

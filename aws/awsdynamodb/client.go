@@ -91,7 +91,7 @@ func UpdateTableItem(ctx context.Context, tablename string, client DynamoDBUpdat
 	return updateItem(ctx, client, &input)
 }
 
-func QueryTable[T any](ctx context.Context, tablename string, client DynamoDBQueryTableApi, keys map[string]any) []T {
+func QueryTable[T any](ctx context.Context, tablename string, client DynamoDBQueryTableApi, keys map[string]any, projections []string) []T {
 	var keyConditionBuilder expression.KeyConditionBuilder
 	for k, v := range keys {
 		keyBuilder := expression.Key(k).Equal(expression.Value(v))
@@ -102,12 +102,24 @@ func QueryTable[T any](ctx context.Context, tablename string, client DynamoDBQue
 		}
 	}
 
-	expr, _ := expression.NewBuilder().WithKeyCondition(keyConditionBuilder).Build()
+	exprBuilder := expression.NewBuilder().WithKeyCondition(keyConditionBuilder)
+
+	if len(projections) > 0 {
+		var projectionBuilder expression.ProjectionBuilder
+		for _, v := range projections {
+			projectionBuilder = projectionBuilder.AddNames(expression.Name(v))
+		}
+		exprBuilder.WithProjection(projectionBuilder)
+	}
+
+	expr, _ := exprBuilder.Build()
+
 	input := dynamodb.QueryInput{
 		TableName:                 aws.String(tablename),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
+		ProjectionExpression:      expr.Projection(),
 	}
 
 	data, err := queryTable(ctx, client, &input)
@@ -123,13 +135,24 @@ func QueryTable[T any](ctx context.Context, tablename string, client DynamoDBQue
 		return nil
 	}
 
-	log.Printf("Loaded following records: %v", recs)
 	return recs
 }
 
-func ReadAllTableData[T any](ctx context.Context, tablename string, client DynamoDBScanTableAPI) []T {
+func ReadAllTableData[T any](ctx context.Context, tablename string, client DynamoDBScanTableAPI, projections []string) []T {
+	var projectionBuilder expression.ProjectionBuilder
+	for _, v := range projections {
+		projectionBuilder = projectionBuilder.AddNames(expression.Name(v))
+	}
+
+	expr, _ := expression.NewBuilder().
+		WithProjection(projectionBuilder).
+		Build()
+
 	input := dynamodb.ScanInput{
-		TableName: aws.String(tablename),
+		TableName:                 aws.String(tablename),
+		ProjectionExpression:      expr.Projection(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
 	}
 
 	info, err := scanTable(ctx, client, &input)
@@ -144,8 +167,6 @@ func ReadAllTableData[T any](ctx context.Context, tablename string, client Dynam
 		log.Error().Err(err).Msg("Failed to unmarshal database data.")
 		return nil
 	}
-
-	log.Printf("Loaded following records: %v", recs)
 
 	return recs
 }
