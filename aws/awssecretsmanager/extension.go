@@ -8,17 +8,33 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 )
 
 var sessionToken = os.Getenv("AWS_SESSION_TOKEN")
 
-type GetSecreteExtensionApi interface {
-	GetSecret(ctx context.Context, name string, decrypt bool) (*string, error)
+type GetSecretFromExtensionApi interface {
+	GetSecret(ctx context.Context, name string, version *string) (*string, error)
+}
+
+type SecretData struct {
+	ARN            string         `json:"ARN"`
+	Name           string         `json:"Name"`
+	VersionId      string         `json:"VersionId"`
+	SecretString   *string        `json:"SecretString"`
+	SecretBinary   []byte         `json:"SecretBinary"`
+	VersionStages  []string       `json:"VersionStages"`
+	CreatedDate    time.Time      `json:"CreatedDate"`
+	ResultMetadata map[string]any `json:"ResultMetadata"`
 }
 
 type SecretsManagerExtensionClient struct{}
 
-func (p *SecretsManagerExtensionClient) GetParameter(ctx context.Context, name string, version *string) (map[string]any, error) {
+func NewExtensinClient() *SecretsManagerExtensionClient {
+	return &SecretsManagerExtensionClient{}
+}
+
+func (p *SecretsManagerExtensionClient) GetSecret(ctx context.Context, name string, version *string) (*SecretData, error) {
 	// Define the URL
 	parsedURL, err := url.Parse("http://localhost:2773/secretsmanager/get")
 	if err != nil {
@@ -59,15 +75,15 @@ func (p *SecretsManagerExtensionClient) GetParameter(ctx context.Context, name s
 		return nil, err
 	}
 
-	var container map[string]any
+	var container SecretData
 	err = json.Unmarshal(responseBody, &container)
 	if err != nil {
 		return nil, err
 	}
 
-	return container, nil
+	return &container, nil
 }
 
-func ReadSecretsManagerSecretFromExtension(ctx context.Context, name string, api GetSecreteExtensionApi, decrypt bool) (*string, error) {
-	return api.GetSecret(ctx, name, decrypt)
+func ReadSecretsManagerSecretFromExtension(ctx context.Context, name string, api GetSecretFromExtensionApi, version *string) (*string, error) {
+	return api.GetSecret(ctx, name, version)
 }
