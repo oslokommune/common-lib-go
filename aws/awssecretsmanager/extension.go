@@ -9,12 +9,16 @@ import (
 	"net/url"
 	"os"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var sessionToken = os.Getenv("AWS_SESSION_TOKEN")
 
 type GetSecretFromExtensionApi interface {
-	GetSecret(ctx context.Context, name string, version *string) (*string, error)
+	GetSecret(ctx context.Context, name string, version *string) (*SecretData, error)
 }
 
 type SecretData struct {
@@ -28,10 +32,32 @@ type SecretData struct {
 	ResultMetadata map[string]any `json:"ResultMetadata"`
 }
 
-type SecretsManagerExtensionClient struct{}
+type SecretsManagerExtensionClient struct {
+	httpClient *http.Client
+	tracing    bool
+}
 
-func NewExtensinClient() *SecretsManagerExtensionClient {
-	return &SecretsManagerExtensionClient{}
+var _ GetSecretFromExtensionApi = (*SecretsManagerExtensionClient)(nil)
+
+func NewExtensionClient(tracing bool) *SecretsManagerExtensionClient {
+	var httpClient *http.Client
+	if tracing {
+		commonLabels := []attribute.KeyValue{
+			attribute.String("otel.resource.service.name", "secret manager extentsion client"),
+		}
+
+		httpClient = &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport, otelhttp.WithSpanOptions(trace.WithAttributes(commonLabels...))),
+			Timeout:   1 * time.Second,
+		}
+	} else {
+		httpClient = &http.Client{}
+	}
+
+	return &SecretsManagerExtensionClient{
+		httpClient: httpClient,
+		tracing:    tracing,
+	}
 }
 
 func (p *SecretsManagerExtensionClient) GetSecret(ctx context.Context, name string, version *string) (*SecretData, error) {
@@ -48,7 +74,6 @@ func (p *SecretsManagerExtensionClient) GetSecret(ctx context.Context, name stri
 	parsedURL.RawQuery = query.Encode()
 
 	// Create an HTTP GET request
-	client := http.Client{}
 	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -57,7 +82,7 @@ func (p *SecretsManagerExtensionClient) GetSecret(ctx context.Context, name stri
 	req.Header.Add("X-Aws-Parameters-Secrets-Token", sessionToken)
 
 	// Call endpoint
-	response, err := client.Do(req)
+	response, err := p.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +109,6 @@ func (p *SecretsManagerExtensionClient) GetSecret(ctx context.Context, name stri
 	return &container, nil
 }
 
-func ReadSecretsManagerSecretFromExtension(ctx context.Context, name string, api GetSecretFromExtensionApi, version *string) (*string, error) {
+func ReadSecretsManagerSecretFromExtension(ctx context.Context, name string, api GetSecretFromExtensionApi, version *string) (*SecretData, error) {
 	return api.GetSecret(ctx, name, version)
 }
