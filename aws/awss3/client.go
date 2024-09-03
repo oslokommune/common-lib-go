@@ -2,10 +2,12 @@ package awss3
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -37,6 +39,10 @@ type ListObjectsV2API interface {
 
 type GetObjectAPI interface {
 	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+}
+
+type PresignObject interface {
+	PresignGetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.PresignOptions)) (*v4.PresignedHTTPRequest, error)
 }
 
 func listObjects(ctx context.Context, api ListObjectsV2API, params *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
@@ -103,6 +109,23 @@ func DownloadFile(ctx context.Context, api GetObjectAPI, bucketName string, obje
 	}
 
 	return bytes, nil
+}
+
+func GeneratePresignedURL(ctx context.Context, api PresignObject, bucketName string, objectKey string, mimeType string, fileName string, expiry time.Duration) (string, error) {
+	input := &s3.GetObjectInput{
+		Bucket:                     aws.String(bucketName),
+		Key:                        aws.String(objectKey),
+		ResponseContentType:        aws.String(mimeType),
+		ResponseContentDisposition: aws.String(fmt.Sprintf("attachment; filename=\"%s\"", fileName)),
+	}
+
+	// Generer en presigned URL
+	presignedURL, err := api.PresignGetObject(ctx, input, s3.WithPresignExpires(expiry))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate presigned URL: %w", err)
+	}
+
+	return presignedURL.URL, nil
 }
 
 // DownloadFileStream downloads file from S3 and returns the io.ReadCloser. This must be closed by the callee function!
