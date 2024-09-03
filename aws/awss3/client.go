@@ -2,6 +2,7 @@ package awss3
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
@@ -103,6 +104,25 @@ func DownloadFile(ctx context.Context, api GetObjectAPI, bucketName string, obje
 	}
 
 	return bytes, nil
+}
+
+func GeneratePresignedURL(ctx context.Context, api *s3.Client, bucketName string, objectKey string, mimeType string, fileName string, expiry time.Duration) (string, error) {
+	presigner := s3.NewPresignClient(api)
+
+	input := &s3.GetObjectInput{
+		Bucket:                     aws.String(bucketName),
+		Key:                        aws.String(objectKey),
+		ResponseContentType:        aws.String(mimeType),
+		ResponseContentDisposition: aws.String(fmt.Sprintf("attachment; filename=\"%s\"", fileName)),
+	}
+
+	// Generer en presigned URL
+	presignedURL, err := presigner.PresignGetObject(ctx, input, s3.WithPresignExpires(expiry))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate presigned URL: %w", err)
+	}
+
+	return presignedURL.URL, nil
 }
 
 // DownloadFileStream downloads file from S3 and returns the io.ReadCloser. This must be closed by the callee function!
