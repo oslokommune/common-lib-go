@@ -5,6 +5,7 @@ import (
 	"text/template"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/render"
 	"github.com/oslokommune/common-lib-go/aws/ginruntime/openapi"
 	"github.com/rs/zerolog/log"
 )
@@ -49,6 +50,14 @@ func (e *GinEngine) AddRoute(group *gin.RouterGroup, path string, method int, an
 			log.Warn().Err(err).Msgf("Failed to add OpenAPI annotation for route %s", path)
 		}
 	}
+}
+
+func (e *GinEngine) SetRenderer(renderer render.HTMLRender) {
+	e.engine.HTMLRender = renderer
+}
+
+func (e *GinEngine) GetRenderer() render.HTMLRender {
+	return e.engine.HTMLRender
 }
 
 func (e *GinEngine) LoadHTLMGlob(path string, funcMap template.FuncMap) {

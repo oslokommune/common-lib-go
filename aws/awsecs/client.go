@@ -249,7 +249,7 @@ func UpdateEcsService(ctx context.Context, client ECSServiceApi, image string, s
 	// Find task definition used
 	serviceDescription, err := DescribeEcsService(ctx, client, serviceName, cluster)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to describe ecs service")
+		log.Error().Err(err).Msgf("failed to describe ecs service in cluster %s", cluster)
 		return nil, err
 	}
 
@@ -294,9 +294,8 @@ func UpdateEcsService(ctx context.Context, client ECSServiceApi, image string, s
 		ProxyConfiguration:      taskDefinition.TaskDefinition.ProxyConfiguration,
 		RequiresCompatibilities: taskDefinition.TaskDefinition.RequiresCompatibilities,
 		RuntimePlatform:         taskDefinition.TaskDefinition.RuntimePlatform,
-		//		Tags:                    taskDefinition.Tags,
-		TaskRoleArn: taskDefinition.TaskDefinition.TaskRoleArn,
-		Volumes:     taskDefinition.TaskDefinition.Volumes,
+		TaskRoleArn:             taskDefinition.TaskDefinition.TaskRoleArn,
+		Volumes:                 taskDefinition.TaskDefinition.Volumes,
 	}
 
 	taskDefinitionOutput, err := registerTaskDefinition(ctx, client, &registerTaskDefinitionInput)

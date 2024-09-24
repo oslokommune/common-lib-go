@@ -59,6 +59,10 @@ func New(ctx context.Context, options ...Option) *GinEngine {
 	return e
 }
 
+func (e *GinEngine) GetEngine() *gin.Engine {
+	return e.engine
+}
+
 func (e *GinEngine) OnShutdown(f func()) {
 	e.onShutdown = append(e.onShutdown, f)
 }
