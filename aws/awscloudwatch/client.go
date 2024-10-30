@@ -51,7 +51,7 @@ type GetMetricDataApi interface {
 }
 
 type StartLiveTailApi interface {
-	StartLiveTail(ctx context.Context, params *cloudwatchlogs.StartLiveTailInput, optFns ...func(*cloudwatchlogs.Options)) (*cloudwatchlogs.StartLiveTailOutput, error) 
+	StartLiveTail(ctx context.Context, params *cloudwatchlogs.StartLiveTailInput, optFns ...func(*cloudwatchlogs.Options)) (*cloudwatchlogs.StartLiveTailOutput, error)
 }
 
 func startLiveTail(ctx context.Context, input *cloudwatchlogs.StartLiveTailInput, client StartLiveTailApi) (*cloudwatchlogs.StartLiveTailOutput, error) {
@@ -72,7 +72,7 @@ func getMetricData(ctx context.Context, input *cloudwatch.GetMetricDataInput, cl
 
 func TailLogs(ctx context.Context, logGroupArn string, client StartLiveTailApi) (*cloudwatchlogs.StartLiveTailEventStream, error) {
 	input := &cloudwatchlogs.StartLiveTailInput{
-		LogGroupIdentifiers:   []string{logGroupArn},
+		LogGroupIdentifiers: []string{logGroupArn},
 	}
 
 	response, err := startLiveTail(ctx, input, client)
@@ -90,7 +90,7 @@ func FetchLogStreams(ctx context.Context, logGroupName string, containerName, ta
 	input := &cloudwatchlogs.DescribeLogStreamsInput{
 		LogGroupName: aws.String(logGroupName),
 		OrderBy:      types.OrderByLastEventTime,
-		Limit:        aws.Int32(10),
+		Limit:        aws.Int32(5),
 		Descending:   aws.Bool(true),
 	}
 
