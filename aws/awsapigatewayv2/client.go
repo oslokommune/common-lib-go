@@ -36,6 +36,14 @@ type ApiGatewayv2GetApisApi interface {
 		optFns ...func(*apigatewayv2.Options)) (*apigatewayv2.GetApisOutput, error)
 }
 
+type ApiGatewayv2GetStageApi interface {
+	GetStage(ctx context.Context, params *apigatewayv2.GetStageInput, optFns ...func(*apigatewayv2.Options)) (*apigatewayv2.GetStageOutput, error)
+}
+
+func getStage(ctx context.Context, api ApiGatewayv2GetStageApi, input *apigatewayv2.GetStageInput) (*apigatewayv2.GetStageOutput, error) {
+	return api.GetStage(ctx, input)
+}
+
 func getDomainNames(ctx context.Context, api ApiGatewayv2GetDomainNames, input *apigatewayv2.GetDomainNamesInput) (*apigatewayv2.GetDomainNamesOutput, error) {
 	return api.GetDomainNames(ctx, input)
 }
@@ -63,6 +71,20 @@ func GetApiMappings(ctx context.Context, client ApiGatewayv2GetApiMappingApi, do
 	}
 
 	return mappings.Items, nil
+}
+
+func GetDefaultStage(ctx context.Context, client ApiGatewayv2GetStageApi, apiID string) (*apigatewayv2.GetStageOutput, error) {
+	input := &apigatewayv2.GetStageInput{
+		ApiId:     &apiID,
+		StageName: aws.String("$default"),
+	}
+
+	output, err := getStage(ctx, client, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return output, nil
 }
 
 func GetDomainNames(ctx context.Context, client ApiGatewayv2GetDomainNames) ([]types.DomainName, error) {
