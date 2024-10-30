@@ -275,7 +275,7 @@ func UpdateEcsService(ctx context.Context, client ECSServiceApi, image string, s
 		return nil, fmt.Errorf("failed to find container definition with image that contains string %s", image)
 	}
 
-	// updates image in task definition
+	// Update image in task definition
 	taskDefinition.TaskDefinition.ContainerDefinitions[index].Image = aws.String(image)
 
 	// Register new task definition
@@ -304,7 +304,7 @@ func UpdateEcsService(ctx context.Context, client ECSServiceApi, image string, s
 		return nil, err
 	}
 
-	// Updates service to use the newly registered task definition
+	// Update service to use the newly registered task definition
 	updateServiceInput := ecs.UpdateServiceInput{
 		TaskDefinition: aws.String(*taskDefinitionOutput.TaskDefinition.TaskDefinitionArn),
 		Service:        aws.String(serviceName),
