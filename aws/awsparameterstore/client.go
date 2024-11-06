@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
@@ -30,8 +31,28 @@ type GetParameterAPI interface {
 		optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error)
 }
 
+type PutParameterApi interface {
+	PutParameter(ctx context.Context,
+		params *ssm.PutParameterInput,
+		optFns ...func(*ssm.Options)) (*ssm.PutParameterOutput, error)
+}
+
+type DescribeParametersApi interface {
+	DescribeParameters(ctx context.Context,
+		params *ssm.DescribeParametersInput,
+		optFns ...func(*ssm.Options)) (*ssm.DescribeParametersOutput, error)
+}
+
 func getParameter(ctx context.Context, api GetParameterAPI, input *ssm.GetParameterInput) (*ssm.GetParameterOutput, error) {
 	return api.GetParameter(ctx, input)
+}
+
+func putParameter(ctx context.Context, api PutParameterApi, input *ssm.PutParameterInput) (*ssm.PutParameterOutput, error) {
+	return api.PutParameter(ctx, input)
+}
+
+func describeParameters(ctx context.Context, api DescribeParametersApi, input *ssm.DescribeParametersInput) (*ssm.DescribeParametersOutput, error) {
+	return api.DescribeParameters(ctx, input)
 }
 
 func GetParameterStoreParameterString(ctx context.Context, client GetParameterAPI, name string) (*string, error) {
@@ -66,4 +87,30 @@ func GetParameterStoreParameter(ctx context.Context, client GetParameterAPI, nam
 	}
 
 	return nil
+}
+
+func UpdateParameterStoreParameter(ctx context.Context, client PutParameterApi, name, value string) error {
+	overwrite := aws.Bool(true)
+	input := ssm.PutParameterInput{
+		Name:      &name,
+		Value:     &value,
+		Overwrite: overwrite,
+	}
+
+	_, err := putParameter(ctx, client, &input)
+
+	return err
+}
+
+func DescribeParameterStoreParameter(ctx context.Context, client DescribeParametersApi, name string) (*ssm.DescribeParametersOutput, error) {
+	filter := types.ParameterStringFilter{
+		Key:    aws.String("Name"),
+		Values: []string{name},
+	}
+
+	input := ssm.DescribeParametersInput{
+		ParameterFilters: []types.ParameterStringFilter{filter},
+	}
+
+	return describeParameters(ctx, client, &input)
 }
