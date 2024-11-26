@@ -14,17 +14,24 @@ func (_m *MockActiveMQApi) Disconnect() {
 	_m.Called()
 }
 
-// Publish provides a mock function with given fields: topic, message
-func (_m *MockActiveMQApi) Publish(topic string, message string) error {
-	ret := _m.Called(topic, message)
+// Publish provides a mock function with given fields: topic, message, header
+func (_m *MockActiveMQApi) Publish(topic string, message string, header ...Header) error {
+	_va := make([]interface{}, len(header))
+	for _i := range header {
+		_va[_i] = header[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, topic, message)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Publish")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(topic, message)
+	if rf, ok := ret.Get(0).(func(string, string, ...Header) error); ok {
+		r0 = rf(topic, message, header...)
 	} else {
 		r0 = ret.Error(0)
 	}
