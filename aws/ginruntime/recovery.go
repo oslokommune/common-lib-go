@@ -63,7 +63,7 @@ func RecoveryMiddleware(c *gin.Context) {
 			goroutine, stack := GetStack()
 			stacktrace := StackTrace{GoRoutine: goroutine, Stack: stack, Reason: r}
 			stacktrace = stacktrace.SkipFramesAfterPanic()
-			log.Error().Stack().Err(stacktrace).Msg("A panic occurred, which will cause a 500 INTERNAL_SERVER_ERROR response")
+			log.Error().Ctx(c.Request.Context()).Stack().Err(stacktrace).Msg("A panic occurred, which will cause a 500 INTERNAL_SERVER_ERROR response")
 			c.AbortWithStatus(500)
 		}
 	}()
