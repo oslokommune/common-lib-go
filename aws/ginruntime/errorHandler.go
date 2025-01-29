@@ -18,9 +18,6 @@ func jsonErrorReporter(errType gin.ErrorType) gin.HandlerFunc {
 		c.Next()
 
 		errorList := c.Errors.ByType(errType)
-		for _, e := range errorList {
-			log.Error().Err(e).Msg("Something happened")
-		}
 
 		if c.IsAborted() {
 			return
@@ -31,19 +28,19 @@ func jsonErrorReporter(errType gin.ErrorType) gin.HandlerFunc {
 			return
 		}
 
-		err := errorList[0].Err
-		apierr := Normalize(err)
+		responseErr := Normalize(errorList[0])
 
-		logError(apierr)
-		c.IndentedJSON(apierr.Status, gin.H{"error": apierr.Error()})
+		for i, e := range errorList[1:] {
+			log.Warn().Ctx(c.Request.Context()).Err(e).Msgf("More than one error occurred while processing %s %s - see the attached error object (%d)", c.Request.Method, c.Request.URL.String(), i)
+		}
+
+		if responseErr.Status >= http.StatusInternalServerError {
+			log.Error().Ctx(c.Request.Context()).Err(responseErr).Msgf("An error occured, which will cause a %d response", responseErr.Status)
+		} else {
+			log.Warn().Ctx(c.Request.Context()).Err(responseErr).Msgf("An error occured, which will cause a %d response", responseErr.Status)
+		}
+
+		c.IndentedJSON(responseErr.Status, gin.H{"error": responseErr.Error()})
 		c.Abort()
-	}
-}
-
-func logError(err *ApiError) {
-	if err.Status >= http.StatusInternalServerError {
-		log.Error().Err(err).Msgf("An error occured, which will cause a %d response", err.Status)
-	} else if err.Status == http.StatusFailedDependency {
-		log.Warn().Err(err).Msgf("An error occured, which will cause a %d response", err.Status)
 	}
 }
