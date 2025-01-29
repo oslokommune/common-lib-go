@@ -28,7 +28,7 @@ func jsonErrorReporter(errType gin.ErrorType) gin.HandlerFunc {
 			return
 		}
 
-		responseErr := Normalize(errorList[0])
+		responseErr := Normalize(errorList[0].Err)
 
 		for i, e := range errorList[1:] {
 			log.Warn().Ctx(c.Request.Context()).Err(e).Msgf("More than one error occurred while processing %s %s - see the attached error object (%d)", c.Request.Method, c.Request.URL.String(), i)
