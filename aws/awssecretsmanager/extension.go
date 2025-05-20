@@ -40,18 +40,16 @@ type SecretsManagerExtensionClient struct {
 var _ GetSecretFromExtensionApi = (*SecretsManagerExtensionClient)(nil)
 
 func NewExtensionClient(tracing bool) *SecretsManagerExtensionClient {
-	var httpClient *http.Client
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	if tracing {
 		commonLabels := []attribute.KeyValue{
 			attribute.String("otel.resource.service.name", "secret manager extentsion client"),
 		}
 
-		httpClient = &http.Client{
-			Transport: otelhttp.NewTransport(http.DefaultTransport, otelhttp.WithSpanOptions(trace.WithAttributes(commonLabels...))),
-			Timeout:   1 * time.Second,
-		}
-	} else {
-		httpClient = &http.Client{}
+		httpClient.Transport = otelhttp.NewTransport(http.DefaultTransport, otelhttp.WithSpanOptions(trace.WithAttributes(commonLabels...)))
 	}
 
 	return &SecretsManagerExtensionClient{
