@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/docker/go-connections/nat"
 	_ "github.com/lib/pq" // Make Postgres lib available for sql.Open
+	"github.com/moby/moby/api/types/network"
 	"github.com/oslokommune/common-lib-go/db"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"time"
@@ -13,13 +13,13 @@ import (
 
 // PostgresStrategy a wait.Strategy to wait on Postgres to start.
 type PostgresStrategy struct {
-	Port           nat.Port
+	Port           string
 	startupTimeout time.Duration
 	dbConf         *db.DbConf
 }
 
 // NewPostgresStrategy constructs a default host port strategy
-func NewPostgresStrategy(port nat.Port, dbConf *db.DbConf) *PostgresStrategy {
+func NewPostgresStrategy(port string, dbConf *db.DbConf) *PostgresStrategy {
 	return &PostgresStrategy{
 		Port:           port,
 		startupTimeout: 60 * time.Second,
@@ -41,9 +41,9 @@ func (hp *PostgresStrategy) WaitUntilReady(ctx context.Context, target wait.Stra
 
 	var waitInterval = 100 * time.Millisecond
 
-	var port nat.Port
+	var port network.Port
 	var i = 0
-	for port == "" {
+	for port.IsZero() {
 		i++
 		select {
 		case <-ctx.Done():
@@ -57,7 +57,7 @@ func (hp *PostgresStrategy) WaitUntilReady(ctx context.Context, target wait.Stra
 	}
 
 	psqlInfo := fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
-		port.Int(), hp.dbConf.Username, hp.dbConf.Password, hp.dbConf.Database)
+		port.Num(), hp.dbConf.Username, hp.dbConf.Password, hp.dbConf.Database)
 
 	var success bool
 	for !success {
@@ -79,7 +79,7 @@ func (hp *PostgresStrategy) WaitUntilReady(ctx context.Context, target wait.Stra
 	return nil
 }
 
-func mappedPort(ctx context.Context, target wait.StrategyTarget, port nat.Port) (nat.Port, error) {
+func mappedPort(ctx context.Context, target wait.StrategyTarget, port string) (network.Port, error) {
 	rp, err := target.MappedPort(ctx, port)
 	return rp, err
 }

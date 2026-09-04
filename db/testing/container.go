@@ -3,7 +3,6 @@ package testing
 import (
 	"context"
 	"fmt"
-	"github.com/docker/go-connections/nat"
 	"github.com/oslokommune/common-lib-go/db"
 	"github.com/testcontainers/testcontainers-go"
 	"testing"
@@ -28,7 +27,7 @@ func ContainerizedPostgres(t *testing.T, conf *db.DbConf) {
 			"POSTGRES_USER":     conf.Username,
 			"POSTGRES_DATABASE": conf.Database,
 		},
-		WaitingFor: NewPostgresStrategy(nat.Port(natPort), conf),
+		WaitingFor: NewPostgresStrategy(natPort, conf),
 	}
 
 	// Start container
@@ -49,7 +48,7 @@ func ContainerizedPostgres(t *testing.T, conf *db.DbConf) {
 	})
 
 	// Get the container info needed
-	mp, err := pg.MappedPort(ctx, nat.Port(natPort))
+	mp, err := pg.MappedPort(ctx, natPort)
 	if err != nil {
 		t.Error(err)
 	}
@@ -59,5 +58,5 @@ func ContainerizedPostgres(t *testing.T, conf *db.DbConf) {
 	}
 
 	// Update the config with the containers host and portnumber
-	conf.UpdateHostAndPort(ma, mp.Int())
+	conf.UpdateHostAndPort(ma, int(mp.Num()))
 }
