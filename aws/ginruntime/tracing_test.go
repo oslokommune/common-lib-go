@@ -118,20 +118,16 @@ func TestMiddleware_TracesHttpServerSpansWithExpectedAttributes(t *testing.T) {
 	assert.Equal(t, service, spans[0].Name())
 	assert.Equal(t, oteltrace.SpanKindServer, spans[0].SpanKind())
 	attributes := Attributes(spans[0].Attributes())
-	assert.Equal(t, "GET", attributes.Get(semconv.HTTPMethodKey).AsString())
-	assert.Equal(t, int64(200), attributes.Get(semconv.HTTPStatusCodeKey).AsInt64())
-	// http.target is deprecated and should be replaced with url.path and url.query
-	if attributes.Has(semconv.HTTPTargetKey) {
-		// otelgin doesn't include the query in http.target
-		assert.Equal(t, "/foo/test", attributes.Get(semconv.HTTPTargetKey).AsString())
-	} else {
-		assert.Equal(t, "/foo/test", attributes.Get(semconv.URLPathKey).AsString())
-		assert.Equal(t, "q=true", attributes.Get(semconv.URLQueryKey).AsString())
-	}
+	assert.Equal(t, "GET", attributes.Get(semconv.HTTPRequestMethodKey).AsString())
+	assert.Equal(t, int64(200), attributes.Get(semconv.HTTPResponseStatusCodeKey).AsInt64())
+	// otelgin no longer emits the deprecated http.target, and does not emit
+	// url.query either, so only url.path is available here.
+	assert.Equal(t, "/foo/test", attributes.Get(semconv.URLPathKey).AsString())
 
-	// otelgin unfortunately uses the span name as the http.route value.
-	// so by annotating the span with the service name we lose out on that information.
-	// assert.Equal(t, "/foo/:bar", attributes.Get(semconv.HTTPRouteKey).AsString())
+	// otelgin used to use the span name as the http.route value, which meant
+	// annotating the span with the service name lost the route. It now emits
+	// the route itself.
+	assert.Equal(t, "/foo/:bar", attributes.Get(semconv.HTTPRouteKey).AsString())
 }
 
 func TestEnableTracing_TracesLambdaInvocationWithExpectedAttributes(t *testing.T) {
@@ -196,7 +192,13 @@ func TestEnableTracing_TracesOtelHttpClientSpansAsSubsegments(t *testing.T) {
 	engine := New(ctx, WithTracing(service, interceptor, &xray.Propagator{}))
 	engine.AddRoute(nil, "/foo/:bar", GET, nil, func(c *gin.Context) {
 		c.JSON(200, "bar")
-		_, _ = otelhttp.Get(c.Request.Context(), "https://test")
+		client := &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Timeout:   time.Microsecond,
+		}
+
+		req, _ := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, "https://test", nil)
+		_, _ = client.Do(req)
 	})
 
 	res := httptest.NewRecorder()
@@ -216,8 +218,8 @@ func TestEnableTracing_TracesOtelHttpClientSpansAsSubsegments(t *testing.T) {
 		httpServerSpan = spans[0]
 	}
 	attributes := Attributes(httpClientSpan.Attributes())
-	assert.Equal(t, "GET", attributes.Get(semconv.HTTPMethodKey).AsString())
-	assert.Equal(t, "https://test", attributes.Get(semconv.HTTPURLKey).AsString())
+	assert.Equal(t, "GET", attributes.Get(semconv.HTTPRequestMethodKey).AsString())
+	assert.Equal(t, "https://test", attributes.Get(semconv.URLFullKey).AsString())
 	assert.Equal(t, httpServerSpan.SpanContext().SpanID(), httpClientSpan.Parent().SpanID())
 }
 
@@ -259,6 +261,6 @@ func TestEnableTracing_TracesHttpClientSpansAsSegments_WhenUsingOtelTransport(t 
 	}
 
 	attributes := Attributes(span.Attributes())
-	assert.Equal(t, "GET", attributes.Get(semconv.HTTPMethodKey).AsString())
-	assert.Equal(t, "https://test", attributes.Get(semconv.HTTPURLKey).AsString())
+	assert.Equal(t, "GET", attributes.Get(semconv.HTTPRequestMethodKey).AsString())
+	assert.Equal(t, "https://test", attributes.Get(semconv.URLFullKey).AsString())
 }
