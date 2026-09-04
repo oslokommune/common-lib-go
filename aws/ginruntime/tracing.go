@@ -1,8 +1,7 @@
 package ginruntime
 
 import (
-	"net/http"
-
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
@@ -35,7 +34,7 @@ func (e *GinEngine) otelGinOptions(service string) []otelgin.Option {
 	}
 
 	return []otelgin.Option{
-		otelgin.WithSpanNameFormatter(func(h *http.Request) string { return service }),
+		otelgin.WithSpanNameFormatter(func(c *gin.Context) string { return service }),
 		otelgin.WithTracerProvider(e.tp),
 		otelgin.WithPropagators(e.propagator),
 	}
